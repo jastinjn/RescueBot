@@ -8,7 +8,7 @@
 
 int main(int argc, char** argv)
 {std::cout << "here" <<std::endl;
-    int numTimes = 4;
+    int numTimes = 1;
     
     if(argc > 1)
     {

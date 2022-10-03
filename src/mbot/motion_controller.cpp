@@ -17,53 +17,125 @@
 #include <signal.h>
 #include "maneuver_controller.h"
 
-/////////////////////// TODO: /////////////////////////////
-/**
- * Code below is a little more than a template. You will need
- * to update the maneuver controllers to function more effectively
- * and/or add different controllers. 
- * You will at least want to:
- *  - Add a form of PID to control the speed at which your
- *      robot reaches its target pose.
- *  - Add a rotation element to the StratingManeuverController
- *      to maintian a avoid deviating from the intended path.
- *  - Limit (min max) the speeds that your robot is commanded
- *      to avoid commands to slow for your bots or ones too high
- */
-///////////////////////////////////////////////////////////
 
 class StraightManeuverController : public ManeuverControllerBase
 {
+
+private:
+    float fwd_sum_error = 0;
+    float fwd_last_error = 0;
+    float turn_sum_error = 0;
+    float turn_last_error = 0;
+    /*************************************************************
+    * TODO:
+    *      - Tune PID parameters for forward and turning during DRIVE state
+    *************************************************************/
+    float fwd_pid[3] = {1.0, 0, 0};
+    float turn_pid[3] = {1.0, 0, 0};
+    /*************************************************************
+    * End of TODO
+    *************************************************************/
 public:
     StraightManeuverController() = default;   
     virtual mbot_motor_command_t get_command(const pose_xyt_t& pose, const pose_xyt_t& target) override
     {
-        return {0, 0.1, 0};
+        float dx = target.x - pose.x;
+        float dy = target.y - pose.y;
+        float d_fwd = sqrt(pow(dx,2) + pow(dy,2));
+        float d_theta = angle_diff(atan2(dy,dx), pose.theta);
+
+        // PID separately for the fwd and the angular velocity output given the fwd and angular error
+        fwd_sum_error += d_fwd;
+        float fwd_der = 0;
+        if (fwd_last_error > 0)
+            fwd_der = (d_fwd - fwd_last_error) / 0.05;
+        
+        float fwd_vel = fwd_pid[0] * d_fwd + fwd_pid[1] * fwd_sum_error + fwd_pid[2] * fwd_der;
+        // fprintf(stdout,"Fwd error: %f\tFwd vel: %f\n", d_fwd, fwd_vel);
+
+        turn_sum_error += d_theta;
+        float turn_der = 0;
+        if (turn_last_error > 0)
+            turn_der = angle_diff(d_theta, turn_last_error) / 0.05;
+        
+        float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
+        // fprintf(stdout,"Turn error: %f\tTurn vel: %f\n", d_theta, turn_vel);
+
+
+
+        return {0, fwd_vel, turn_vel};
     }
 
-    virtual bool target_reached(const pose_xyt_t& pose, const pose_xyt_t& target)  override
+    virtual bool target_reached(const pose_xyt_t& pose, const pose_xyt_t& target, bool is_end_pose)  override
     {
-        return ((fabs(pose.x - target.x) < 0.1) && (fabs(pose.y - target.y)  < 0.1));
+        return ((fabs(pose.x - target.x) < 0.02) && (fabs(pose.y - target.y)  < 0.02));
     }
 };
 
 class TurnManeuverController : public ManeuverControllerBase
 {
+private:    
+    float turn_sum_error = 0;
+    float turn_last_error = 0;
+    /*************************************************************
+    * TODO:
+    *      - Tune PID parameters for turning during TURN state
+    *************************************************************/
+    float turn_pid[3] = {1.0, 0, 0};
+    /*************************************************************
+    * End of TODO
+    *************************************************************/
 public:
     TurnManeuverController() = default;   
     virtual mbot_motor_command_t get_command(const pose_xyt_t& pose, const pose_xyt_t& target) override
     {
-        return {0, 0, 0.5};
+        float dx = target.x - pose.x;
+        float dy = target.y - pose.y;
+        float d_theta = angle_diff(atan2(dy,dx), pose.theta);
+        // fprintf(stdout,"dx: %f\tdy: %f\td_theta: %f\n", dx, dy, d_theta);
+
+        // PID for the angular velocity given the delta theta
+        turn_sum_error += d_theta;
+        float turn_der = 0.0;
+        if (turn_last_error > 0)
+            turn_der = (d_theta - turn_last_error) / 0.05;
+        
+        float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
+        // fprintf(stdout,"Turn error: %f\tTurn vel: %f\tPose theta: %f\n", d_theta, turn_vel, pose.theta);
+
+        return {0, 0, turn_vel};
+    }
+    mbot_motor_command_t get_command_final_turn(const pose_xyt_t& pose, const pose_xyt_t& target)
+    {
+        float d_theta = angle_diff(target.theta, pose.theta);
+
+        // PID for the angular velocity given the delta theta
+        turn_sum_error += d_theta;
+        float turn_der = 0;
+        if (turn_last_error > 0)
+            turn_der = (d_theta - turn_last_error) / 0.05;
+        
+        float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
+
+        return {0, 0, turn_vel};
     }
 
-    virtual bool target_reached(const pose_xyt_t& pose, const pose_xyt_t& target)  override
+    virtual bool target_reached(const pose_xyt_t& pose, const pose_xyt_t& target, bool is_end_pose)  override
     {
         float dx = target.x - pose.x;
         float dy = target.y - pose.y;
         float target_heading = atan2(dy, dx);
-        return (fabs(angle_diff(pose.theta, target_heading)) < 0.07);
+        // Handle the case when the target is on the same x,y but on a different theta
+        return (fabs(angle_diff(pose.theta, target_heading)) < 0.05);
     }
+    bool target_reached_final_turn(const pose_xyt_t& pose, const pose_xyt_t& target)
+    {
+        // Handle the case when the target is on the same x,y but on a different theta
+        return (fabs(angle_diff(target.theta, pose.theta)) < 0.05);
+    }
+
 };
+
 
 
 class MotionController
@@ -98,34 +170,53 @@ public:
         if(!targets_.empty() && !odomTrace_.empty()) 
         {
             pose_xyt_t target = targets_.back();
+            bool is_last_target = targets_.size() == 1;
             pose_xyt_t pose = currentPose();
 
-            ///////  TODO: Add different states when adding maneuver controls /////// 
+            ///////  TODO (Optional): Add different states when adding maneuver controls /////// 
             if(state_ == TURN)
             { 
-                if(turn_controller.target_reached(pose, target))
+                if(turn_controller.target_reached(pose, target, is_last_target))
                 {
 		            state_ = DRIVE;
                 } 
                 else
                 {
                     cmd = turn_controller.get_command(pose, target);
+                    cmd.utime = now();
                 }
             }
             else if(state_ == DRIVE) 
             {
-                if(straight_controller.target_reached(pose, target))
+                if(straight_controller.target_reached(pose, target, is_last_target))
                 {
-                    if(!assignNextTarget())
+                    if (is_last_target)
                     {
-                        std::cout << "\rTarget Reached!";
+                        state_ = FINAL_TURN;
                     }
+                    else if (!assignNextTarget()){}
                 }
                 else
                 { 
                     cmd = straight_controller.get_command(pose, target);
+                    cmd.utime = now();
                 }
 		    }
+            else if(state_ == FINAL_TURN)
+            {
+                if(turn_controller.target_reached_final_turn(pose, target))
+                {
+		            if(!assignNextTarget())
+                    {
+                        printf("Target reached! (%f,%f,%f)\n", target.x, target.y, target.theta);
+                    }
+                } 
+                else
+                {
+                    cmd = turn_controller.get_command_final_turn(pose, target);
+                    cmd.utime = now();
+                }
+            }
             else
             {
                 std::cerr << "ERROR: MotionController: Entered unknown state: " << state_ << '\n';
@@ -145,15 +236,15 @@ public:
     void handlePath(const lcm::ReceiveBuffer* buf, const std::string& channel, const robot_path_t* path)
     {
         targets_ = path->path;
-        std::reverse(targets_.begin(), targets_.end()); // store first at back to allow for easy pop_back()
 
-    	std::cout << "received new path at time: " << path->utime << "\n"; 
+        std::cout << "received new path at time: " << path->utime << "\n"; 
     	for(auto pose : targets_)
         {
     		std::cout << "(" << pose.x << "," << pose.y << "," << pose.theta << "); ";
-    	}
+    	}  	
         std::cout << std::endl;
 
+        std::reverse(targets_.begin(), targets_.end()); // store first at back to allow for easy pop_back()  
         assignNextTarget();
 
         //confirm that the path was received
@@ -177,6 +268,7 @@ private:
     enum State
     {
         TURN,
+        FINAL_TURN, // to get to the pose heading
         DRIVE
     };
     
@@ -255,6 +347,27 @@ int main(int argc, char** argv)
 
     	if(controller.timesync_initialized()){
             	mbot_motor_command_t cmd = controller.updateCommand();
+
+                /*************************************************************
+                * TODO:
+                *      - Change the limitation of forward and angular velocity commands
+                *************************************************************/
+
+                // Limit command values
+                // Fwd vel
+                float max_fwd_vel = 0.3;
+                if (cmd.trans_v > max_fwd_vel) cmd.trans_v = max_fwd_vel;
+                else if (cmd.trans_v < -max_fwd_vel) cmd.trans_v = -max_fwd_vel;
+
+                // Angular vel
+                float max_ang_vel = M_PI * 2.0 / 3.0;
+                if (cmd.angular_v > max_ang_vel) cmd.angular_v = max_ang_vel;
+                else if (cmd.angular_v < -max_ang_vel) cmd.angular_v = -max_ang_vel;
+                
+                /*************************************************************
+                * End of TODO
+                *************************************************************/
+
             	lcmInstance.publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
     	}
     }
