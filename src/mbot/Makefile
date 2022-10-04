@@ -28,7 +28,7 @@ $(BIN_MOTION_CONTROLLER): motion_controller.o $(LIBDEPS)
 
 $(BIN_RPLIDAR_DRIVER): rplidar_driver.o $(LIBDEPS)
 	@echo "    $@"
-	@$(CXX) -o $@ $^ $(LDFLAGS)
+	@$(CXX) -o $@ $^ $(LDFLAGS) -lpthread
 
 $(BIN_TIMESYNC): timesync.o $(LIBDEPS)
 	@echo "    $@"
