@@ -356,12 +356,12 @@ int main(int argc, char** argv)
 
                 // Limit command values
                 // Fwd vel
-                float max_fwd_vel = 0.3;
+                float max_fwd_vel = 1.0;
                 if (cmd.trans_v > max_fwd_vel) cmd.trans_v = max_fwd_vel;
                 else if (cmd.trans_v < -max_fwd_vel) cmd.trans_v = -max_fwd_vel;
 
                 // Angular vel
-                float max_ang_vel = M_PI * 2.0 / 3.0;
+                float max_ang_vel = M_PI;
                 if (cmd.angular_v > max_ang_vel) cmd.angular_v = max_ang_vel;
                 else if (cmd.angular_v < -max_ang_vel) cmd.angular_v = -max_ang_vel;
                 
