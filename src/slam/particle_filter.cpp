@@ -59,8 +59,8 @@ pose_xyt_t ParticleFilter::updateFilterActionOnly(const pose_xyt_t&      odometr
     
     if(hasRobotMoved)
     {
-        //auto prior = resamplePosteriorDistribution();
-        auto proposal = computeProposalDistribution(posterior_);
+        auto prior = resamplePosteriorDistribution();
+        auto proposal = computeProposalDistribution(prior);
         posterior_ = proposal;
     }
     
@@ -102,22 +102,14 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
 
     std::vector<particle_t> Xt; //running mean
     float r = generator() / static_cast<float>(generator.max()); //[0,1] random float 
-    r /= kNumParticles_; //[0, 1/M] where M = kNumParticles_
-    int c = prior[1].weight;
-    int i = 1; //c++ is 0-indexed, not 1-indexed (changed algo from slides)
-    int index = 1; 
+    r /= static_cast<float>(kNumParticles_); //[0, 1/M] where M = kNumParticles_
+    float c = prior[0].weight;
+    int i = 0; //c++ is 0-indexed, not 1-indexed (changed algo from slides)
 
-    for(auto &p : prior){
-        //her demo:
-        // p.pose.x = posteriorPose_.x + dist(generator); //add a little noise --> demo purpose
-        // p.pose.y = posteriorPose_.y + dist(generator);
-        // p.pose.theta = posteriorPose_.theta + dist(generator);
-        // p.pose.utime = posteriorPose_.utime;
-        // p.parent_pose = posteriorPose_;
-        // p.weight = sampleWeight;
+    for(int index = 0; index < kNumParticles_; ++index){
 
-        float U = r + (index - 1)/kNumParticles_;
-        while(U > c){
+        float u = r + (index)/static_cast<float>(kNumParticles_);
+        while(u > c){
             i += 1;
             c += prior[i].weight;
         }
@@ -125,6 +117,23 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
     }
 
     return Xt;
+
+    // //demo:
+    // std::vector<particle_t> prior = posterior_;
+    // double sampleWeight = 1.0/kNumParticles_;
+    // std::random_device rd;
+    // std::mt19937 generator(rd());
+    // std::normal_distribution<> dist(0.0, 0.04); //center at 0, 0.04 is standard dev
+
+    // for(auto& p : prior){
+    //     p.pose.x = posteriorPose_.x + dist(generator);
+    //     p.pose.y = posteriorPose_.y + dist(generator);
+    //     p.pose.theta = posteriorPose_.theta + dist(generator);
+    //     p.pose.utime = posteriorPose_.utime;
+    //     p.parent_pose = posteriorPose_;
+    //     p.weight = sampleWeight;
+    // }
+    // return prior;
 }
 
 
@@ -158,7 +167,7 @@ std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(const std::ve
         posterior.push_back(weighted);
     }
 
-    for(auto &&p : posterior_){
+    for(auto &&p : posterior){
         p.weight /= sumWeights;
     }
 
@@ -185,6 +194,7 @@ pose_xyt_t ParticleFilter::estimatePosteriorPose(const std::vector<particle_t>& 
     pose.x = xMean;
     pose.y = yMean;
     pose.theta = std::atan2(sinThetaMean, cosThetaMean);
+    //lcm_.publish("ODOMETRY", &pose);
 
     return pose;
 }

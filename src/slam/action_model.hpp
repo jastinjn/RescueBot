@@ -56,6 +56,22 @@ public:
 private:
     
     ////////// TODO: Add private member variables needed for you implementation ///////////////////
+    const float k1_;
+    const float k2_;
+
+    pose_xyt_t previousPose_;
+    double rot1_;
+    double trans_;
+    double rot2_;
+    uint64_t utime_;
+
+    bool initialized_;
+
+    std::mt19937 numberGenerator_;
+
+    float rot1Std_;
+    float tranStd_;
+    float rot2Std_;
 };
 
 #endif // SLAM_ACTION_MODEL_HPP

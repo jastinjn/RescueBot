@@ -8,8 +8,6 @@
 ActionModel::ActionModel(void)
 : k1_(0.01f)
 , k2_(0.005f)
-, alpha2(0.02f)
-, alpha4(0.02f)
 , initialized_(false)
 {
     //////////////// TODO: Handle any initialization for your ActionModel /////////////////////////
@@ -60,7 +58,6 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
     return moved;
 }
 
-
 particle_t ActionModel::applyAction(const particle_t& sample)
 {
     ////////////// TODO: Implement your code for sampling new poses from the distribution computed in updateAction //////////////////////
@@ -70,56 +67,32 @@ particle_t ActionModel::applyAction(const particle_t& sample)
     
     //this demo: easy and simple one --> normal distribution
     //we should implement code to sample new poses from the desired distribution as updated above
-    
-    /* FROM HER VIDEO
-    float sampleRot1 = std::normal_distribution<>(rot1_, rot1Std_)(numberGenerator_);
-    float sampleRot2 = std::normal_distribution<>(rot2_, rot2Std_)(numberGenerator_);
-    float sampleTrans = std::normal_distribution<>(trans_, tranStd_)(numberGenerator_);
+
+    // float x = sample.pose.x; //current pose
+    // float y = sample.pose.y; //current pose
+    // float theta = sample.pose.theta; //current pose
+
+    // float delta_rot_1_hat = delta_rot_1 - std::normal_distribution<>(0, rot1Std_)(numberGenerator_);
+    // float delta_trans_hat = delta_trans - std::normal_distribution<>(0, tranStd_)(numberGenerator_);
+    // float delta_rot_2_hat = delta_rot_2 - std::normal_distribution<>(0, rot2Std_)(numberGenerator_);
+
+    // newSample.pose.x = x + delta_trans_hat * std::cos(theta + delta_rot_1_hat);
+    // newSample.pose.y = y + delta_trans_hat*std::sin(theta + delta_rot_1_hat);
+    // newSample.pose.theta = wrap_to_2pi(theta + delta_rot_1_hat + delta_rot_2_hat);
+    // newSample.pose.utime = utime_; //updated current time
+    // newSample.parent_pose = sample.pose;
+
+    float sampleRot1 = std::normal_distribution<float>(rot1_, rot1Std_)(numberGenerator_);
+    float sampleRot2 = std::normal_distribution<float>(rot2_, rot2Std_)(numberGenerator_);
+    float sampleTrans = std::normal_distribution<float>(trans_, tranStd_)(numberGenerator_);
 
     newSample.pose.x += sampleTrans * std::cos(sample.pose.theta + sampleRot1);
     newSample.pose.y += sampleTrans * std::sin(sample.pose.theta + sampleRot1);
-    newSample.pose.theta = wrap_to_pi(sample.pose.theta + sampleRot1 + sampleRot2);
+    newSample.pose.theta = wrap_to_2pi(sample.pose.theta + sampleRot1 + sampleRot2);
     newSample.pose.utime = utime_; //updated current time
     newSample.parent_pose = sample.pose;
-    */
+    std::cout << "(x,y) = (" << newSample.pose.x << "," << newSample.pose.y << ")" << std::endl;
 
-    float x = sample.pose.x;
-    float y = sample.pose.y;
-    float theta = sample.pose.theta;
-
-    // float x_bar = previousPose_.x;
-    // float y_bar = previousPose_.y;
-    // float theta_bar = previousPose_.theta;
-
-    // float x_bar_prime = previousPose_.parent_pose.x;
-    // float y_bar_prime = previousPose_.parent_pose.y;
-    // float theta_bar_prime = previousPose_.parent_pose.theta;
-
-    // float delta_rot_1 = atan2(y_bar_prime - y_bar, x_bar_prime - x_bar) - theta_bar;
-    // float delta_trans = std::sqrt(std::pow(x_bar_prime - x_bar, 2) + std::pow(y_bar_prime - y_bar, 2));
-    // float delta_rot_2 = theta_bar_prime - theta_bar - delta_rot_1;
-
-    //the book: The function sample(b) generates a random sample from a zero-centered
-    //distribution with variance b. It may, for example, be implemented using the algorithms in
-    //Table 5.4.
-    //k1=alpha1, k2 =alpha3, cross correlations = alpha2,alpha4
-    // rot1Std_ = k1_ * delta_rot_1 + alpha2 * delta_trans;
-    // tranStd_ = k2_ * delta_trans + alpha4*(delta_rot_1 + delta_rot_2);
-    // rot2Std_ = k1_*delta_rot_2 + alpha2*delta_trans;
-    
-    float delta_rot_1_hat = rot1_ - std::normal_distribution<float>(0, rot1Std_)(numberGenerator_);
-    float delta_trans_hat = trans_ - std::normal_distribution<float>(0, tranStd_)(numberGenerator_);
-    float delta_rot_2_hat = rot2_ - std::normal_distribution<float>(0, rot2Std_)(numberGenerator_);
-
-    // float x_prime = x + delta_trans_hat * std::cos(theta + delta_rot_1_hat);
-    // float y_prime = y + delta_trans_hat*std::sin(theta + delta_rot_1_hat);
-    // float theta_prime = theta + delta_rot_1_hat + delta_rot_2_hat;
-
-    newSample.pose.x = x + delta_trans_hat * std::cos(theta + delta_rot_1_hat);
-    newSample.pose.y = y + delta_trans_hat*std::sin(theta + delta_rot_1_hat);
-    newSample.pose.theta = theta + delta_rot_1_hat + delta_rot_2_hat;
-    newSample.pose.utime = utime_; //updated current time
-    newSample.parent_pose = sample.pose;
 
     return newSample; //newly sampled after applying action model (just with a normal distribution)
 }

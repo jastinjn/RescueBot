@@ -14,6 +14,19 @@ SensorModel::SensorModel(void)
 double SensorModel::likelihood(const particle_t& sample, const lidar_t& scan, const OccupancyGrid& map)
 {
     ///////////// TODO: Implement your sensor model for calculating the likelihood of a particle given a laser scan //////////
-    
-    return 1.0;
+    double scanLikelihood = 0.0;
+    MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose);
+
+    for(auto &&ray : movingScan){
+        Point<double> endpoint(ray.origin.x + ray.range * std::cos(ray.theta), ray.origin.y + ray.range * std::sin(ray.theta));
+        
+        auto rayEnd = global_position_to_grid_cell(endpoint, map); //end ray cell
+        auto rayCost = map.logOdds(rayEnd.x, rayEnd.y);
+
+        if(rayCost > 0){
+            scanLikelihood += rayCost;
+        }
+    }
+
+    return scanLikelihood;
 }

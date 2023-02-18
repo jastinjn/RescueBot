@@ -12,19 +12,19 @@ def current_utime(): return int(time.time() * 1e6)
 
 
 # Motor a (LEFT MOTOR)
-pid_msg.motor_a_kp = 1.0
-pid_msg.motor_a_ki = 0.0
-pid_msg.motor_a_kd = 0.0
+pid_msg.motor_a_kp = 0.8
+pid_msg.motor_a_ki = 0.05
+pid_msg.motor_a_kd = 0.15
 pid_msg.motor_a_Tf = 25.0
 
 # Motor c (RIGHT_MOTOR)
-pid_msg.motor_c_kp = 1.0
-pid_msg.motor_c_ki = 0.0
-pid_msg.motor_c_kd = 0.0
+pid_msg.motor_c_kp = 0.8
+pid_msg.motor_c_ki = 0.05
+pid_msg.motor_c_kd = 0.15
 pid_msg.motor_c_Tf = 25.0
 
 # Translational velocity
-pid_msg.bf_trans_kp = 1.0
+pid_msg.bf_trans_kp = 0.8
 pid_msg.bf_trans_ki = 0.0
 pid_msg.bf_trans_kd = 0.0
 pid_msg.bf_trans_Tf = 10.0
