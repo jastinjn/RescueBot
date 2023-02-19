@@ -329,7 +329,7 @@ private:
     void subscribeToLcm()
     {
         lcmInstance->subscribe(ODOMETRY_CHANNEL, &MotionController::handleOdometry, this);
-        // lcmInstance->subscribe(SLAM_POSE_CHANNEL, &MotionController::handlePose, this);
+        lcmInstance->subscribe(SLAM_POSE_CHANNEL, &MotionController::handlePose, this);
         lcmInstance->subscribe(CONTROLLER_PATH_CHANNEL, &MotionController::handlePath, this);
         lcmInstance->subscribe(MBOT_TIMESYNC_CHANNEL, &MotionController::handleTimesync, this);
     }

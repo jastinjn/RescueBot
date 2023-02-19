@@ -6,7 +6,7 @@
 #include <iostream>
 
 ActionModel::ActionModel(void)
-: k1_(0.01f)
+: k1_(0.005f)
 , k2_(0.005f)
 , initialized_(false)
 {
@@ -88,11 +88,10 @@ particle_t ActionModel::applyAction(const particle_t& sample)
 
     newSample.pose.x += sampleTrans * std::cos(sample.pose.theta + sampleRot1);
     newSample.pose.y += sampleTrans * std::sin(sample.pose.theta + sampleRot1);
-    newSample.pose.theta = wrap_to_2pi(sample.pose.theta + sampleRot1 + sampleRot2);
+    newSample.pose.theta = wrap_to_pi(sample.pose.theta + sampleRot1 + sampleRot2);
     newSample.pose.utime = utime_; //updated current time
     newSample.parent_pose = sample.pose;
-    std::cout << "(x,y) = (" << newSample.pose.x << "," << newSample.pose.y << ")" << std::endl;
-
+    std::cout << "(x,y,theta) = (" << newSample.pose.x << "," << newSample.pose.y << "," << newSample.pose.theta << ")" << std::endl;
 
     return newSample; //newly sampled after applying action model (just with a normal distribution)
 }

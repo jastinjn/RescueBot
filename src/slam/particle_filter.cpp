@@ -1,7 +1,9 @@
 #include <slam/particle_filter.hpp>
 #include <slam/occupancy_grid.hpp>
 #include <lcmtypes/pose_xyt_t.hpp>
+#include <common/angle_functions.hpp>
 #include <cassert>
+#include <random>
 
 
 ParticleFilter::ParticleFilter(int numParticles)
@@ -85,7 +87,6 @@ particles_t ParticleFilter::particles(void) const
     return particles;
 }
 
-
 std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
 {
     //////////// TODO: Implement your algorithm for resampling from the posterior distribution ///////////////////
@@ -96,13 +97,16 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
     std::random_device rd;
     std::mt19937 generator(rd());
     // std::normal_distribution<> dist(0.0, 0.04); //center at 0, 0.04 is standard dev
+    std::uniform_real_distribution<float> uni_dist(0.0, 1/kNumParticles_);
 
     //in live demo: resample posterior from a normal distribution; this is incorrect
     //our implementation: sensor model, low variance sampler from lecture using cumulative sum
 
     std::vector<particle_t> Xt; //running mean
-    float r = generator() / static_cast<float>(generator.max()); //[0,1] random float 
-    r /= static_cast<float>(kNumParticles_); //[0, 1/M] where M = kNumParticles_
+    
+    // float r = generator() / static_cast<float>(generator.max()); //[0,1] random float 
+    // r /= static_cast<float>(kNumParticles_); //[0, 1/M] where M = kNumParticles_
+    float r = uni_dist(generator);
     float c = prior[0].weight;
     int i = 0; //c++ is 0-indexed, not 1-indexed (changed algo from slides)
 
@@ -118,17 +122,17 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
 
     return Xt;
 
-    // //demo:
+    //demo:
     // std::vector<particle_t> prior = posterior_;
     // double sampleWeight = 1.0/kNumParticles_;
-    // std::random_device rd;
-    // std::mt19937 generator(rd());
-    // std::normal_distribution<> dist(0.0, 0.04); //center at 0, 0.04 is standard dev
+    // // std::random_device rd;
+    // // std::mt19937 generator(rd());
+    // // std::normal_distribution<> dist(0.0, 0.04); //center at 0, 0.04 is standard dev
 
     // for(auto& p : prior){
-    //     p.pose.x = posteriorPose_.x + dist(generator);
-    //     p.pose.y = posteriorPose_.y + dist(generator);
-    //     p.pose.theta = posteriorPose_.theta + dist(generator);
+    //     p.pose.x = posteriorPose_.x ;//+ dist(generator);
+    //     p.pose.y = posteriorPose_.y ;//+ dist(generator);
+    //     p.pose.theta = posteriorPose_.theta;// + dist(generator);
     //     p.pose.utime = posteriorPose_.utime;
     //     p.parent_pose = posteriorPose_;
     //     p.weight = sampleWeight;
