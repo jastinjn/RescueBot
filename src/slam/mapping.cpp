@@ -22,7 +22,7 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
         previousPose_ = pose; //initialize
     }
 
-    MovingLaserScan movingscan(scan, previousPose_, pose);
+    MovingLaserScan movingscan(scan, previousPose_, pose, 5);
 
     for(auto& ray : movingscan){ //update map, compute log odds
         scoreEndpoint(ray,map);

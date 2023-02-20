@@ -187,18 +187,28 @@ pose_xyt_t ParticleFilter::estimatePosteriorPose(const std::vector<particle_t>& 
     double yMean = 0.0;
     double cosThetaMean = 0.0;
     double sinThetaMean = 0.0;
-
-    for(auto &p : posterior){
-        xMean += p.weight * p.pose.x;
-        yMean += p.weight * p.pose.y;
-        cosThetaMean += p.weight * std::cos(p.pose.theta); //NOTE: her code didn't have += and instead had =?
-        sinThetaMean += p.weight * std::sin(p.pose.theta); //NOTE: her code didn't have += and instead had =?
+    //1st sort the vector largest to smallest
+    std::vector<particle_t> copy = posterior;
+    // change 1: change operator to greater than
+    std::sort(copy.begin(), copy.end(), []( particle_t &a,  particle_t &b) { return a.weight > b.weight;});
+    //2nd pick only the k-best
+    int k_best_percentage = 10;
+    // change 2: static cast to float to avoid division giving 0
+    int top_k_particles = kNumParticles_ * static_cast<float>(k_best_percentage/100.0);
+	
+    float sum_kbest_weights = 0.0;
+    for (int i = 0; i < top_k_particles; ++i){
+        float particleWeight = copy[i].weight;
+    	xMean += copy[i].pose.x * particleWeight;
+        yMean += copy[i].pose.y * particleWeight;
+        cosThetaMean += std::cos(copy[i].pose.theta) * particleWeight;
+        sinThetaMean += std::sin(copy[i].pose.theta) * particleWeight;
+        sum_kbest_weights += particleWeight;
     }
-
-    pose.x = xMean;
-    pose.y = yMean;
-    pose.theta = std::atan2(sinThetaMean, cosThetaMean);
+    // change 3 divide each mean by weight of sums of best particles (since total weight is no longer 1)
+    pose.x = xMean/sum_kbest_weights;
+    pose.y = yMean/sum_kbest_weights;
+    pose.theta = std::atan2(sinThetaMean/sum_kbest_weights, cosThetaMean/sum_kbest_weights);
     //lcm_.publish("ODOMETRY", &pose);
-
     return pose;
 }
