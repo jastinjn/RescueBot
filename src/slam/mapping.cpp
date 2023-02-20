@@ -22,7 +22,7 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
         previousPose_ = pose; //initialize
     }
 
-    MovingLaserScan movingscan(scan, previousPose_, pose, 5);
+    MovingLaserScan movingscan(scan, previousPose_, pose, 7);
 
     for(auto& ray : movingscan){ //update map, compute log odds
         scoreEndpoint(ray,map);
@@ -99,7 +99,7 @@ void Mapping::increaseCellOdds(int x, int y, OccupancyGrid &map){
 
 void Mapping::decreaseCellOdds(int x, int y, OccupancyGrid &map){
     //makes sure no overflow. If it is open space, it must be >= minimum value.
-    if(std::numeric_limits<CellOdds>::min() + map(x,y) > kMissOdds_){
+    if(map(x,y) - std::numeric_limits<CellOdds>::min() > kMissOdds_){
         //then we want to decrease the cell odds
         map(x,y) -= kMissOdds_;
     } else{
