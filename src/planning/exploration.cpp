@@ -244,6 +244,10 @@ int8_t Exploration::executeExploringMap(bool initialize)
     *       -- You will likely be able to see the frontier before actually reaching the end of the path leading to it.
     */
     
+    frontiers_ = find_map_frontiers(currentMap_,currentPose_);
+    planner_.setMap(currentMap_);
+    currentPath_ = plan_path_to_frontier(frontiers_,currentPose_,currentMap_,planner_);
+    
     /////////////////////////////// End student code ///////////////////////////////
     
     /////////////////////////   Create the status message    //////////////////////////
@@ -265,7 +269,8 @@ int8_t Exploration::executeExploringMap(bool initialize)
     // Otherwise, there are frontiers, but no valid path exists, so exploration has failed
     else
     {
-        status.status = exploration_status_t::STATUS_FAILED;
+        //status.status = exploration_status_t::STATUS_FAILED;
+        status.status = exploration_status_t::STATE_EXPLORING_MAP;
     }
     
     lcmInstance_->publish(EXPLORATION_STATUS_CHANNEL, &status);
@@ -289,6 +294,7 @@ int8_t Exploration::executeExploringMap(bool initialize)
             std::cerr << "ERROR: Exploration::executeExploringMap: Set an invalid exploration status. Exploration failed!";
             return exploration_status_t::STATE_FAILED_EXPLORATION;
     }
+   
 }
 
 
@@ -301,6 +307,7 @@ int8_t Exploration::executeReturningHome(bool initialize)
     *       (1) dist(currentPose_, targetPose_) < kReachedPositionThreshold  :  reached the home pose
     *       (2) currentPath_.path_length > 1  :  currently following a path to the home pose
     */
+    currentPath_ = planner_.planPath(currentPose_,homePose_);
     
 
 

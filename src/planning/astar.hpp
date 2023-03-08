@@ -14,11 +14,13 @@ struct Node
 {
     double h_cost;
     double g_cost;
+    double theta;
     Node* parent;
     cell_t cell;
-    Node(int a, int b) : h_cost(1.0E16), g_cost(1.0E16), parent(NULL), cell(a,b){};
+    Node(int a, int b) : h_cost(1.0E16), g_cost(1.0E16), theta(1.0E16), parent(NULL), cell(a,b){};
+    Node(int a, int b, double theta_) : h_cost(1.0E16), g_cost(1.0E16), theta(theta_), parent(NULL), cell(a,b){};
 
-    double f_cost(void) const{return h_cost * g_cost;}
+    double f_cost(void) const{return h_cost + g_cost;}
     bool operator==(const Node& rhs) const{
         return (cell==rhs.cell);
     }
@@ -70,7 +72,7 @@ struct PriorityQueue
         int idx = -1;
 
         for(unsigned i=0; i<elements.size(); i++){
-            if(*elements[i] == *n)
+            if(*(elements[i]) == *n)
             {
                 idx = i;
                 break;
@@ -112,6 +114,8 @@ double g_cost(Node* from, Node* goal, const ObstacleDistanceGrid& distances, con
 std::vector<Node*> expand_node(Node* node, const ObstacleDistanceGrid& distances, const SearchParams& params);
 std::vector<Node*> extract_node_path(Node* goal_node, Node* start_node);
 std::vector<Node*> prune_node_path(std::vector<Node*> nodePath);
+robot_path_t make_path(Node* goal, Node* start, const ObstacleDistanceGrid& distances);
+
 
 std::vector<pose_xyt_t> extract_pose_path(std::vector<Node*> nodes, const ObstacleDistanceGrid& distances);
 
