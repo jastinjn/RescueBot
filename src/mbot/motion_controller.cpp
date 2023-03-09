@@ -69,7 +69,7 @@ public:
 
     virtual bool target_reached(const pose_xyt_t& pose, const pose_xyt_t& target, bool is_end_pose)  override
     {
-        return ((fabs(pose.x - target.x) < 0.02) && (fabs(pose.y - target.y)  < 0.02));
+        return ((fabs(pose.x - target.x) < 0.04) && (fabs(pose.y - target.y)  < 0.04));
     }
 };
 
@@ -127,12 +127,12 @@ public:
         float dy = target.y - pose.y;
         float target_heading = atan2(dy, dx);
         // Handle the case when the target is on the same x,y but on a different theta
-        return (fabs(angle_diff(pose.theta, target_heading)) < 0.05);
+        return (fabs(angle_diff(pose.theta, target_heading)) < 0.1);
     }
     bool target_reached_final_turn(const pose_xyt_t& pose, const pose_xyt_t& target)
     {
         // Handle the case when the target is on the same x,y but on a different theta
-        return (fabs(angle_diff(target.theta, pose.theta)) < 0.05);
+        return (fabs(angle_diff(target.theta, pose.theta)) < 0.1);
     }
 
 };

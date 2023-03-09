@@ -16,15 +16,15 @@ robot_path_t search_for_path(pose_xyt_t start,
         path.path_length = path.path.size();
         return path;
     }
-    std::cout<<"search_for_path\n";
+    //std::cout<<"search_for_path\n";
     PriorityQueue open;
     std::vector<Node*> closed;
 
     // convert starting and goal poses into nodes 
     Point<int> startCoords = global_position_to_grid_cell(Point<float>(start.x, start.y), distances);
     Point<int> endCoords = global_position_to_grid_cell(Point<float>(goal.x,goal.y), distances);
-    Node * startNode = new Node(startCoords.x, startCoords.y,start.theta);
-    Node * endNode = new Node(endCoords.x, endCoords.y,goal.theta);
+    Node * startNode = new Node(startCoords.x, startCoords.y);//,start.theta);
+    Node * endNode = new Node(endCoords.x, endCoords.y);//,goal.theta);
     bool found = 0;
    open.push(startNode);
 
@@ -42,7 +42,7 @@ robot_path_t search_for_path(pose_xyt_t start,
             child->g_cost = g_cost(child,endNode,distances,params);
             if(*child == *endNode){
                 //std::cout<<"child==endNode\n";
-                child->theta = endNode->theta;
+                //child->theta = endNode->theta;
                 found = true;
                 path = make_path(child,startNode,distances);
                 break;
@@ -89,18 +89,20 @@ std::vector<Node*> expand_node(Node* node, const ObstacleDistanceGrid& distances
     const int xDeltas[8] = {1, -1, 0, 0, 1, -1, 1, -1};
     const int yDeltas[8] = {0, 0, 1, -1, 1, -1, -1, 1};
     std::vector<Node*> children;
-    const double tDeltas[8] = {0,M_PI,M_PI_2,-M_PI_2,M_PI_4,3*-M_PI_4,-M_PI_4,3*M_PI_4};
+    //const double tDeltas[8] = {0,M_PI,M_PI_2,-M_PI_2,M_PI_4,3*-M_PI_4,-M_PI_4,3*M_PI_4};
  for(int n=0; n<8; ++n){
     int cell_x = node->cell.x + xDeltas[n];
     int cell_y = node->cell.y + yDeltas[n];
-    Node* childNode = new Node(cell_x, cell_y, tDeltas[n]);
+    Node* childNode = new Node(cell_x, cell_y);//, tDeltas[n]);
     // if(!distances.isCellInGrid(cell_x, cell_y))
     //     continue;
     // if(distances(cell_x,cell_y) < params.minDistanceToObstacle && distances(cell_x,cell_y) != -1.0)
     //     continue;
-
+    //std::cout<<"cell in grid: "<<distances.isCellInGrid(cell_x, cell_y)<<"\n";
+    //std::cout<<"distance: "<<distances(cell_x,cell_y)<<"\n";
     if(!distances.isCellInGrid(cell_x, cell_y) || (distances(cell_x,cell_y) <= params.minDistanceToObstacle && distances(cell_x,cell_y) != -1.0)){
         delete childNode;
+        //std::cout<<"child node ignored\n";
         continue;
     }
         
@@ -159,7 +161,7 @@ robot_path_t make_path(Node* goal, Node* start,const ObstacleDistanceGrid& dista
         pose_xyt_t path_pose;
         path_pose.x = pose.x;
         path_pose.y = pose.y;
-        path_pose.theta = path_pruned[i]->theta;
+        //path_pose.theta = path_pruned[i]->theta;
         //std::cout<<distances(path_pruned[i]->cell.x,path_pruned[i]->cell.y)<<std::endl;
         final_path.path.push_back(path_pose);
     }

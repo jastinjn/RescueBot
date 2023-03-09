@@ -227,7 +227,7 @@ void BotGui::render(void)
         MotionPlanner planner;
         planner.setMap(map_);
         distances_ = planner.obstacleDistances();
-
+        
         MotionPlannerParams params;
         draw_distance_grid(distances_,  params.robotRadius, distBuf);
     }

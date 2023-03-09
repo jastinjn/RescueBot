@@ -99,66 +99,38 @@ robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers,
     *   - The cells along the frontier might not be in the configuration space of the robot, so you won't necessarily
     *       be able to drive straight to a frontier cell, but will need to drive somewhere close.
     */
-    // frontier_t best_frontier;
-    // double best_dist = std::numeric_limits<double>::max();
-    // Point<int> current_cell = global_position_to_grid_cell(Point<float>(robotPose.x,robotPose.y),map);
-    
-    // //robot_path_t frontier_path;
-    // for(auto &cluster:frontiers){
-    //     double dx = (cluster.cells[0].x - current_cell.x) * (cluster.cells[0].x - current_cell.x);
-    //     double dy = (cluster.cells[0].y - current_cell.y) * (cluster.cells[0].y - current_cell.y);
-    //     double dist = sqrt(dx+dy);
-    //     if(dist < best_dist){
-    //         best_frontier = cluster;
-    //         best_dist = dist;
-    //     }
-        //
-        // for(auto &cell:best_frontier.cells){
-        //     Point<double> goal_point = grid_position_to_global_position(Point<double>(cell.x,cell.y),map);
-        //     pose_xyt_t goal;
-        //     goal.x = goal_point.x;
-        //     goal.y = goal_point.y;
-        //     goal.theta = 0;
-        //     frontier_path = planner.planPath(robotPose,goal);
-        //     if(frontier_path.path_length>2){
-        //         break;
-        //     }
-        // frontier_path = planner.planPath(robotPose,goal);
-        // if(frontier_path.path_length>2){
-        //     break;
-        // }
-
-    //}
-    
-    
-    // robot_path_t frontier_path;
-    // for(auto &cell:best_frontier.cells){
-    //     Point<double> goal_point = grid_position_to_global_position(Point<double>(cell.x,cell.y),map);
-    //     pose_xyt_t goal;
-    //     goal.x = goal_point.x;
-    //     goal.y = goal_point.y;
-    //     goal.theta = 0;
-    //     frontier_path = planner.planPath(robotPose,goal);
-    //     if(frontier_path.path_length>2){
-    //         break;
-    //     }
-    // }
 
     robot_path_t frontier_path;
-    std::cout<<"frontiers: "<<frontiers.size()<<"\n";
-    for (auto &frontier: frontiers){
-        for (auto &cell: frontier.cells){
-            
+    //std::cout<<"frontiers: "<<frontiers.size()<<"\n";
+    // for (auto &frontier: frontiers){
+    //     for (auto &cell: frontier.cells){
+    //         pose_xyt_t goal;
+    //         goal.x = cell.x;
+    //         goal.y = cell.y;
+    //         std::cout<<"goal"<<goal.x<<","<<goal.y<<"\n";
+    //         goal.theta = 0;
+    //         frontier_path = planner.planPath(robotPose,goal);
+    //         std::cout<<"path length"<<frontier_path.path_length<<"\n";
+    //         std::cout<<"is cell in grid: "<<","<<goal.y<<"\n";
+    //         if(frontier_path.path_length>=2){
+    //             std::cout<<"path length"<<frontier_path.path_length<<"\n";
+    //             return frontier_path;
+    //         }
+    //     }
+    // }
+    for(int i = frontiers.size()-1; i>=0; --i){
+        for(int j = frontiers[i].cells.size()-1; j>=0; --j){
+            Point<float> cell = frontiers[i].cells[j];
             pose_xyt_t goal;
             goal.x = cell.x;
             goal.y = cell.y;
-            std::cout<<"goal"<<goal.x<<","<<goal.y<<"\n";
+            //std::cout<<"goal"<<goal.x<<","<<goal.y<<"\n";
             goal.theta = 0;
             frontier_path = planner.planPath(robotPose,goal);
-            std::cout<<"path length"<<frontier_path.path_length<<"\n";
-            std::cout<<"is cell in grid: "<<","<<goal.y<<"\n";
+            //std::cout<<"path length"<<frontier_path.path_length<<"\n";
+            //std::cout<<"is cell in grid: "<<","<<goal.y<<"\n";
             if(frontier_path.path_length>=2){
-                std::cout<<"path length"<<frontier_path.path_length<<"\n";
+                //std::cout<<"path length"<<frontier_path.path_length<<"\n";
                 return frontier_path;
             }
         }

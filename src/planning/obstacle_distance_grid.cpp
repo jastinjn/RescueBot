@@ -16,7 +16,7 @@ void ObstacleDistanceGrid::initializeDistances(const OccupancyGrid& map){
 
     for(int y=0; y<height; ++y){
         for(int x=0; x<width; ++x){
-            if(map.logOdds(x,y) < 0){
+            if(map.logOdds(x,y) <= 0){
                 distance(x,y) = -1.0;
             }else{
                 distance(x,y) = 0.0;
@@ -26,11 +26,11 @@ void ObstacleDistanceGrid::initializeDistances(const OccupancyGrid& map){
 }
 
 bool is_cell_free(cell_t cell, const OccupancyGrid& map){
-    return map.logOdds(cell.x, cell.y)<0;
+    return map.logOdds(cell.x, cell.y)<=0;
 }
 
 bool is_cell_occupied(cell_t cell, const OccupancyGrid&map){
-    return map.logOdds(cell.x, cell.y)>=0;
+    return map.logOdds(cell.x, cell.y)>0;
 }
 
 void ObstacleDistanceGrid::setDistances(const OccupancyGrid& map)

@@ -31,7 +31,6 @@ robot_path_t MotionPlanner::planPath(const pose_xyt_t& start,
         failedPath.utime = utime_now();
         failedPath.path_length = 1;
         failedPath.path.push_back(start);
-
         std::cout << "INFO: path rejected due to invalid goal\n";        
 
         return failedPath;
@@ -50,27 +49,28 @@ robot_path_t MotionPlanner::planPath(const pose_xyt_t& start, const pose_xyt_t& 
 
 bool MotionPlanner::isValidGoal(const pose_xyt_t& goal) const
 {
+    //return true;
     float dx = goal.x - prev_goal.x, dy = goal.y - prev_goal.y;
     float distanceFromPrev = std::sqrt(dx * dx + dy * dy);
 
     //if there's more than 1 frontier, don't go to a target that is within a robot diameter of the current pose
-        std::cout << "1\n";
+        //std::cout << "1\n";
     if(num_frontiers != 1 && distanceFromPrev < 2 * searchParams_.minDistanceToObstacle) return false;
-        std::cout << "2\n";
+        //std::cout << "2\n";
     auto goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances_);
 
     // A valid goal is in the grid
     if(distances_.isCellInGrid(goalCell.x, goalCell.y))
     {
-        std::cout << "4\n";
+        //std::cout << "4\n";
         // And is far enough from obstacles that the robot can physically occupy the space
         // Add an extra cell to account for discretization error and make motion a little safer by not trying to
         // completely snuggle up against the walls in the motion plan
-        std::cout << "radius: " << params_.robotRadius << "\n";
-        std::cout << "distance: " << distances_(goalCell.x, goalCell.y) << "\n";
+        //std::cout << "radius: " << params_.robotRadius << "\n";
+        //std::cout << "distance: " << distances_(goalCell.x, goalCell.y) << "\n";
         return distances_(goalCell.x, goalCell.y) > params_.robotRadius || distances_(goalCell.x, goalCell.y) == -1.0;
     }
-        std::cout << "3\n";
+        //std::cout << "3\n";
     // A goal must be in the map for the robot to reach it
     return false;
 }
