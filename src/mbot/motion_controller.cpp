@@ -32,7 +32,7 @@ private:
     *      - Tune PID parameters for forward and turning during DRIVE state
     *************************************************************/
     float fwd_pid[3] = {0.75, 0.0, 0.0};
-    float turn_pid[3] = {1.5, 0.0, 0.0};
+    float turn_pid[3] = {0.8, 0.0, 0.0};
     /*************************************************************
     * End of TODO
     *************************************************************/
@@ -82,7 +82,7 @@ private:
     * TODO:
     *      - Tune PID parameters for turning during TURN state
     *************************************************************/
-    float turn_pid[3] = {1.5, 0, 0};
+    float turn_pid[3] = {0.8, 0.0, 0.0};
     /*************************************************************
     * End of TODO
     *************************************************************/
@@ -180,17 +180,20 @@ public:
                 if(turn_controller.target_reached(pose, target, is_last_target))
                 {
 		            state_ = DRIVE;
+                    printf("turn complete\n");
                 } 
                 else
                 {
                     cmd = turn_controller.get_command(pose, target);
                     cmd.utime = now();
+                    printf("turning\n");
                 }
             }
             else if(state_ == DRIVE) 
             {
                 if(straight_controller.target_reached(pose, target, is_last_target))
                 {
+                    printf("straight complete\n");
                     if (is_last_target)
                     {
                         state_ = FINAL_TURN;
@@ -201,21 +204,27 @@ public:
                 { 
                     cmd = straight_controller.get_command(pose, target);
                     cmd.utime = now();
+                    printf("straight\n");
                 }
 		    }
             else if(state_ == FINAL_TURN)
             {
                 if(turn_controller.target_reached_final_turn(pose, target))
                 {
+                    printf("final turn complete\n");
+                    targets_ = newTargets_;
 		            if(!assignNextTarget())
                     {
                         printf("Target reached! (%f,%f,%f)\n", target.x, target.y, target.theta);
+                        targets_ = newTargets_;
+                        assignNextTarget();
                     }
                 } 
                 else
                 {
                     cmd = turn_controller.get_command_final_turn(pose, target);
                     cmd.utime = now();
+                    printf("final turn\n");
                 }
             }
             else
@@ -236,17 +245,22 @@ public:
     
     void handlePath(const lcm::ReceiveBuffer* buf, const std::string& channel, const robot_path_t* path)
     {
-        targets_ = path->path;
+        newTargets_ = path->path;
+        //targets_ = path->path;
 
         std::cout << "received new path at time: " << path->utime << "\n"; 
-    	for(auto pose : targets_)
+    	for(auto pose : newTargets_)
         {
     		std::cout << "(" << pose.x << "," << pose.y << "," << pose.theta << "); ";
     	}  	
         std::cout << std::endl;
 
-        std::reverse(targets_.begin(), targets_.end()); // store first at back to allow for easy pop_back()  
-        assignNextTarget();
+        std::reverse(newTargets_.begin(), newTargets_.end()); // store first at back to allow for easy pop_back()  
+        
+        if (targets_.empty()){
+            targets_ = newTargets_;
+            assignNextTarget();
+        }
 
         //confirm that the path was received
         message_received_t confirm {now(), path->utime, channel};
@@ -263,7 +277,7 @@ public:
     {
         computeOdometryOffset(*pose);
     }
-    
+
 private:
     
     enum State
@@ -276,6 +290,8 @@ private:
     pose_xyt_t odomToGlobalFrame_;      // transform to convert odometry into the global/map coordinates for navigating in a map
     PoseTrace  odomTrace_;              // trace of odometry for maintaining the offset estimate
     std::vector<pose_xyt_t> targets_;
+    std::vector<pose_xyt_t> newTargets_;
+    //std::vector<pose_xyt_t> newTargets_; 
 
     State state_;
 

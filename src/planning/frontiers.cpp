@@ -118,7 +118,7 @@ robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers,
     //         }
     //     }
     // }
-    for(int i = frontiers.size()-1; i>=0; --i){
+    for(int i = 0; i < frontiers.size(); ++i){
         for(int j = frontiers[i].cells.size()-1; j>=0; --j){
             Point<float> cell = frontiers[i].cells[j];
             pose_xyt_t goal;
