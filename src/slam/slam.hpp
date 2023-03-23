@@ -4,11 +4,13 @@
 #include <lcmtypes/lidar_t.hpp>
 #include <lcmtypes/odometry_t.hpp>
 #include <lcmtypes/pose_xyt_t.hpp>
+#include <lcmtypes/thermal_grid_t.hpp>
 #include <slam/particle_filter.hpp>
 #include <slam/mapping.hpp>
 #include <common/pose_trace.hpp>
 #include <common/lcm_config.h>
 #include <slam/occupancy_grid.hpp>
+#include <slam/thermal_grid.hpp>
 #include <lcm/lcm-cpp.hpp>
 #include <deque>
 #include <mutex>
@@ -93,6 +95,7 @@ private:
     
     ParticleFilter filter_;
     OccupancyGrid map_;
+    ThermalGrid thermalMap_;
     Mapping mapper_;
     
     lcm::LCM& lcm_;

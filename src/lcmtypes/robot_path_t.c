@@ -21,8 +21,9 @@ uint64_t __robot_path_t_hash_recursive(const __lcm_hash_ptr *p)
     cp.v = __robot_path_t_get_hash;
     (void) cp;
 
-    uint64_t hash = (uint64_t)0xd8a57fd0b3392990LL
+    uint64_t hash = (uint64_t)0xdee0cc52718d21d9LL
          + __int64_t_hash_recursive(&cp)
+         + __int8_t_hash_recursive(&cp)
          + __int32_t_hash_recursive(&cp)
          + __pose_xyt_t_hash_recursive(&cp)
         ;
@@ -48,6 +49,9 @@ int __robot_path_t_encode_array(void *buf, int offset, int maxlen, const robot_p
     for (element = 0; element < elements; element++) {
 
         thislen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &(p[element].utime), 1);
+        if (thislen < 0) return thislen; else pos += thislen;
+
+        thislen = __int8_t_encode_array(buf, offset + pos, maxlen - pos, &(p[element].rescue), 1);
         if (thislen < 0) return thislen; else pos += thislen;
 
         thislen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &(p[element].path_length), 1);
@@ -81,6 +85,8 @@ int __robot_path_t_encoded_array_size(const robot_path_t *p, int elements)
 
         size += __int64_t_encoded_array_size(&(p[element].utime), 1);
 
+        size += __int8_t_encoded_array_size(&(p[element].rescue), 1);
+
         size += __int32_t_encoded_array_size(&(p[element].path_length), 1);
 
         size += __pose_xyt_t_encoded_array_size(p[element].path, p[element].path_length);
@@ -101,7 +107,7 @@ size_t robot_path_t_struct_size(void)
 
 int robot_path_t_num_fields(void)
 {
-    return 3;
+    return 4;
 }
 
 int robot_path_t_get_field(const robot_path_t *p, int i, lcm_field_t *f)
@@ -121,6 +127,15 @@ int robot_path_t_get_field(const robot_path_t *p, int i, lcm_field_t *f)
         }
         
         case 1: {
+            f->name = "rescue";
+            f->type = LCM_FIELD_INT8_T;
+            f->typestr = "int8_t";
+            f->num_dim = 0;
+            f->data = (void *) &p->rescue;
+            return 0;
+        }
+        
+        case 2: {
             f->name = "path_length";
             f->type = LCM_FIELD_INT32_T;
             f->typestr = "int32_t";
@@ -129,7 +144,7 @@ int robot_path_t_get_field(const robot_path_t *p, int i, lcm_field_t *f)
             return 0;
         }
         
-        case 2: {
+        case 3: {
             /* pose_xyt_t */
             f->name = "path";
             f->type = LCM_FIELD_USER_TYPE;
@@ -172,6 +187,9 @@ int __robot_path_t_decode_array(const void *buf, int offset, int maxlen, robot_p
         thislen = __int64_t_decode_array(buf, offset + pos, maxlen - pos, &(p[element].utime), 1);
         if (thislen < 0) return thislen; else pos += thislen;
 
+        thislen = __int8_t_decode_array(buf, offset + pos, maxlen - pos, &(p[element].rescue), 1);
+        if (thislen < 0) return thislen; else pos += thislen;
+
         thislen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &(p[element].path_length), 1);
         if (thislen < 0) return thislen; else pos += thislen;
 
@@ -189,6 +207,8 @@ int __robot_path_t_decode_array_cleanup(robot_path_t *p, int elements)
     for (element = 0; element < elements; element++) {
 
         __int64_t_decode_array_cleanup(&(p[element].utime), 1);
+
+        __int8_t_decode_array_cleanup(&(p[element].rescue), 1);
 
         __int32_t_decode_array_cleanup(&(p[element].path_length), 1);
 
@@ -226,6 +246,8 @@ int __robot_path_t_clone_array(const robot_path_t *p, robot_path_t *q, int eleme
     for (element = 0; element < elements; element++) {
 
         __int64_t_clone_array(&(p[element].utime), &(q[element].utime), 1);
+
+        __int8_t_clone_array(&(p[element].rescue), &(q[element].rescue), 1);
 
         __int32_t_clone_array(&(p[element].path_length), &(q[element].path_length), 1);
 

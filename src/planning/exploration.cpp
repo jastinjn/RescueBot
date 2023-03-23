@@ -310,7 +310,7 @@ int8_t Exploration::executeReturningHome(bool initialize)
     */
     planner_.setMap(currentMap_);
     currentPath_ = planner_.planPath(currentPose_,homePose_);
-    
+    currentPath_.rescue = 1;        //sets path to rescue path
     std::cout<< "return home start\n";
 
 

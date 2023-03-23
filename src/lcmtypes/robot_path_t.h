@@ -30,6 +30,8 @@ struct _robot_path_t
 {
     int64_t    utime;
     /// Time of path creation
+    int8_t     rescue;
+    /// Mode of next path (exploration = 0 vs rescue = 1)
     int32_t    path_length;
     /// Number of poses in the path
     pose_xyt_t *path;

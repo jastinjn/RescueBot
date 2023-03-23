@@ -5,6 +5,7 @@
 #include <common/pose_trace.hpp>
 #include <common/lcm_config.h>
 #include <slam/occupancy_grid.hpp>
+#include <slam/thermal_grid.hpp>
 #include <lcmtypes/exploration_status_t.hpp>
 #include <lcmtypes/odometry_t.hpp>
 #include <lcmtypes/particles_t.hpp>
@@ -61,6 +62,9 @@ public:
     void handleOccupancyGrid(const lcm::ReceiveBuffer* rbuf, 
                              const std::string& channel, 
                              const occupancy_grid_t* map);
+    void handleThermalGrid(const lcm::ReceiveBuffer* rbuf, 
+                             const std::string& channel, 
+                             const thermal_grid_t* map);
     void handleParticles(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const particles_t* particles);
     void handlePose(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const pose_xyt_t* pose);
     void handleOdometry(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const odometry_t* odom);
@@ -83,6 +87,7 @@ private:
     std::vector<OccupancyGrid> wifi_maps;
     std::map<std::string, Trace> traces_;           // Storage of all received pose traces
     OccupancyGrid map_;                             // Current OccupancyGrid of the robot environment
+    ThermalGrid tmap_;                             // Current OccupancyGrid of the robot environment
     lidar_t laser_;                         // Most recent laser scan
     ObstacleDistanceGrid distances_;                // Distance grid to output the configuration space of the robot
     std::vector<frontier_t> frontiers_;             // Frontiers in the current map
@@ -106,6 +111,7 @@ private:
     GtkWidget* showParticlesCheck_;                 // Checkbox indicating if the particles should be drawn
     GtkWidget* showPathCheck_;                      // Checkbox indicating if the current path should be drawn
     GtkWidget* showDistancesCheck_;                 // Checkbox indicating if the obstacle distance grid should be drawn
+    GtkWidget* showThermalCheck_;                    // Checkbox indicating if the thermal grid should be drawn
     GtkWidget* showFrontiersCheck_;                 // Checkbox indicating if the frontiers in the map should be shown
     GtkWidget* cmdSlider_;                          // Slider controlling cmdSpeed_
     GtkWidget* trimSlider_;                         // Slider controlling the right wheel trim

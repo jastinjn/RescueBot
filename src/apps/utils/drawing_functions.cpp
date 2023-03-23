@@ -5,9 +5,11 @@
 #include <lcmtypes/robot_path_t.hpp>
 #include <lcmtypes/particle_t.hpp>
 #include <lcmtypes/particles_t.hpp>
+#include <lcmtypes/thermal_grid_t.hpp>
 #include <planning/frontiers.hpp>
 #include <planning/obstacle_distance_grid.hpp>
 #include <slam/occupancy_grid.hpp>
+#include <slam/thermal_grid.hpp>
 
 // Headers to remove for stencil version
 #include <imagesource/image_u8.h>
@@ -116,6 +118,30 @@ void draw_occupancy_grid(const OccupancyGrid& grid, vx_buffer_t* buffer)
     image_u8_destroy(gridImg);
 }
 
+void draw_thermal_grid(const ThermalGrid& grid, vx_buffer_t* buffer)
+{
+    ////////////////// TODO: Draw OccupancyGrid as specified in assignment ////////////////////////////
+    
+    image_u8_t* gridImg = image_u8_create(grid.widthInCells(), grid.heightInCells());
+    
+    for(int y = 0; y < grid.heightInCells(); ++y)
+    {
+        for(int x = 0; x < grid.widthInCells(); ++x)
+        {
+            gridImg->buf[gridImg->stride*y + x] = grid(x, y);
+        }
+    }
+
+    vx_object_t* gridObject = vxo_image_from_u8(gridImg, 0, VX_TEX_MIN_FILTER);
+    vx_buffer_add_back(buffer, 
+                       vxo_chain(vxo_mat_translate3(grid.originInGlobalFrame().x,
+                                                    grid.originInGlobalFrame().y,
+                                                    0),
+                                 vxo_mat_scale(grid.metersPerCell()),
+                       gridObject));
+
+    image_u8_destroy(gridImg);
+}
 
 void draw_particles(const particles_t& particles, vx_buffer_t* buffer)
 {

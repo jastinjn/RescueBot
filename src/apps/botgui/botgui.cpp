@@ -17,7 +17,7 @@
 #include <cassert>
 #include <glib.h>
 #include <unistd.h>
-
+#include <iostream>
 
 void clear_traces_pressed(GtkWidget* button, gpointer gui);
 void reset_state_pressed(GtkWidget* button, gpointer gui);
@@ -198,6 +198,7 @@ void BotGui::onDisplayStart(vx_display_t* display)
 {
     VxGtkWindowBase::onDisplayStart(display);
     lcmInstance_->subscribe(SLAM_MAP_CHANNEL, &BotGui::handleOccupancyGrid, this);
+    lcmInstance_->subscribe(THERMAL_MAP_CHANNEL, &BotGui::handleThermalGrid, this);
     lcmInstance_->subscribe(SLAM_PARTICLES_CHANNEL, &BotGui::handleParticles, this);
     lcmInstance_->subscribe(CONTROLLER_PATH_CHANNEL, &BotGui::handlePath, this);
     lcmInstance_->subscribe(LIDAR_CHANNEL, &BotGui::handleLaser, this);
@@ -232,6 +233,16 @@ void BotGui::render(void)
         draw_distance_grid(distances_,  params.robotRadius, distBuf);
     }
     vx_buffer_swap(distBuf);
+
+    // Draw the thermal grid if requested
+    vx_buffer_t* thermBuf = vx_world_get_buffer(world_, "thermal");
+    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(showThermalCheck_)))
+    {
+        //std::cout << "button pressed\n";
+        draw_thermal_grid(tmap_, thermBuf);//fix map
+    }
+    vx_buffer_swap(thermBuf);
+    
     
     // Draw the frontiers if requested
     vx_buffer_t* frontierBuf = vx_world_get_buffer(world_, "frontiers");
@@ -309,6 +320,14 @@ void BotGui::handleOccupancyGrid(const lcm::ReceiveBuffer* rbuf,
     std::lock_guard<std::mutex> autoLock(vxLock_);
     map_.fromLCM(*map);
     frontiers_ = find_map_frontiers(map_, slamPose_);
+}
+
+void BotGui::handleThermalGrid(const lcm::ReceiveBuffer* rbuf, 
+                                 const std::string& channel, 
+                                 const thermal_grid_t* map)
+{
+    std::lock_guard<std::mutex> autoLock(vxLock_);
+    tmap_.fromLCM(*map);
 }
 
 
@@ -601,6 +620,10 @@ void BotGui::createGuiLayout(GtkWidget* window, GtkWidget* vxCanvas)
     showFrontiersCheck_ = gtk_check_button_new_with_label("Show Frontiers");
     gtk_box_pack_start(GTK_BOX(optionsBox_), showFrontiersCheck_, FALSE, TRUE, 0);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(showFrontiersCheck_), TRUE);
+
+    showThermalCheck_ = gtk_check_button_new_with_label("Show Thermal Values");
+    gtk_box_pack_start(GTK_BOX(optionsBox_), showThermalCheck_, FALSE, TRUE, 0);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(showThermalCheck_), FALSE);
     
     GtkWidget* dataSeparator = gtk_hseparator_new();
     gtk_box_pack_start(GTK_BOX(optionsBox_), dataSeparator, FALSE, TRUE, 0);

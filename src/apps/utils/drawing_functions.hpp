@@ -6,6 +6,7 @@
 
 class ObstacleDistanceGrid;
 class OccupancyGrid;
+class ThermalGrid;
 class PoseTrace;
 class particles_t;
 class pose_xyt_t;
@@ -58,6 +59,8 @@ void draw_laser_scan(const lidar_t& laser, const pose_xyt_t& pose, const float c
 * \param    buffer      Buffer to add the occupancy grid image to
 */
 void draw_occupancy_grid(const OccupancyGrid& grid, vx_buffer_t* buffer);
+
+void draw_thermal_grid(const ThermalGrid& grid, vx_buffer_t* buffer);
 
 /**
 * draw_particles draws a set of particles being maintaining by the SLAM particle filter. Each particle has a pose and

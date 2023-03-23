@@ -12,6 +12,7 @@ import lcm.lcm.*;
 public final class robot_path_t implements lcm.lcm.LCMEncodable
 {
     public long utime;
+    public byte rescue;
     public int path_length;
     public rob550.lcmtypes.pose_xyt_t path[];
  
@@ -20,7 +21,7 @@ public final class robot_path_t implements lcm.lcm.LCMEncodable
     }
  
     public static final long LCM_FINGERPRINT;
-    public static final long LCM_FINGERPRINT_BASE = 0xd8a57fd0b3392990L;
+    public static final long LCM_FINGERPRINT_BASE = 0xdee0cc52718d21d9L;
  
     static {
         LCM_FINGERPRINT = _hashRecursive(new ArrayList<Class<?>>());
@@ -48,6 +49,8 @@ public final class robot_path_t implements lcm.lcm.LCMEncodable
     public void _encodeRecursive(DataOutput outs) throws IOException
     {
         outs.writeLong(this.utime); 
+ 
+        outs.writeByte(this.rescue); 
  
         outs.writeInt(this.path_length); 
  
@@ -81,6 +84,8 @@ public final class robot_path_t implements lcm.lcm.LCMEncodable
     {
         this.utime = ins.readLong();
  
+        this.rescue = ins.readByte();
+ 
         this.path_length = ins.readInt();
  
         this.path = new rob550.lcmtypes.pose_xyt_t[(int) path_length];
@@ -94,6 +99,8 @@ public final class robot_path_t implements lcm.lcm.LCMEncodable
     {
         rob550.lcmtypes.robot_path_t outobj = new rob550.lcmtypes.robot_path_t();
         outobj.utime = this.utime;
+ 
+        outobj.rescue = this.rescue;
  
         outobj.path_length = this.path_length;
  

@@ -21,6 +21,7 @@ OccupancyGridSLAM::OccupancyGridSLAM(int         numParticles,
 , numIgnoredScans_(0)
 , filter_(numParticles)
 , map_(10.0f, 10.0f, 0.05f) //30,30,0.1  // create a 10m x 10m grid with 0.05m cells
+, thermalMap_(10.0f, 10.0f, 0.05f)
 , mapper_(5.0f, hitOddsIncrease, missOddsDecrease)
 , lcm_(lcmComm)
 , mapUpdateCount_(0)
@@ -80,6 +81,15 @@ void OccupancyGridSLAM::runSLAM(void)
         // Otherwise, do a quick spin while waiting for data rather than using more complicated condition variable.
         else
         {
+            for(int y = 0; y < thermalMap_.heightInCells(); ++y)
+            {
+                for(int x = 0; x < thermalMap_.widthInCells(); ++x)
+                {
+                    thermalMap_.setThermalValue(x,y,(x+y)%127);
+                }
+            }
+            auto thermalMessage = thermalMap_.toLCM();
+            lcm_.publish(THERMAL_MAP_CHANNEL, &thermalMessage);
             usleep(1000);
         }
     }

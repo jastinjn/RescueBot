@@ -28,6 +28,9 @@ class robot_path_t
         int64_t    utime;
 
         /// Time of path creation
+        int8_t     rescue;
+
+        /// Mode of next path (exploration = 0 vs rescue = 1)
         int32_t    path_length;
 
         /// Number of poses in the path
@@ -132,6 +135,9 @@ int robot_path_t::_encodeNoHash(void *buf, int offset, int maxlen) const
     tlen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
+    tlen = __int8_t_encode_array(buf, offset + pos, maxlen - pos, &this->rescue, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
     tlen = __int32_t_encode_array(buf, offset + pos, maxlen - pos, &this->path_length, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
@@ -148,6 +154,9 @@ int robot_path_t::_decodeNoHash(const void *buf, int offset, int maxlen)
     int pos = 0, tlen;
 
     tlen = __int64_t_decode_array(buf, offset + pos, maxlen - pos, &this->utime, 1);
+    if(tlen < 0) return tlen; else pos += tlen;
+
+    tlen = __int8_t_decode_array(buf, offset + pos, maxlen - pos, &this->rescue, 1);
     if(tlen < 0) return tlen; else pos += tlen;
 
     tlen = __int32_t_decode_array(buf, offset + pos, maxlen - pos, &this->path_length, 1);
@@ -170,6 +179,7 @@ int robot_path_t::_getEncodedSizeNoHash() const
 {
     int enc_size = 0;
     enc_size += __int64_t_encoded_array_size(NULL, 1);
+    enc_size += __int8_t_encoded_array_size(NULL, 1);
     enc_size += __int32_t_encoded_array_size(NULL, 1);
     for (int a0 = 0; a0 < this->path_length; a0++) {
         enc_size += this->path[a0]._getEncodedSizeNoHash();
@@ -185,7 +195,7 @@ uint64_t robot_path_t::_computeHash(const __lcm_hash_ptr *p)
             return 0;
     const __lcm_hash_ptr cp = { p, robot_path_t::getHash };
 
-    uint64_t hash = 0xd8a57fd0b3392990LL +
+    uint64_t hash = 0xdee0cc52718d21d9LL +
          pose_xyt_t::_computeHash(&cp);
 
     return (hash<<1) + ((hash>>63)&1);

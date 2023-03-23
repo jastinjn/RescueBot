@@ -12,14 +12,15 @@ import struct
 import pose_xyt_t
 
 class robot_path_t(object):
-    __slots__ = ["utime", "path_length", "path"]
+    __slots__ = ["utime", "rescue", "path_length", "path"]
 
-    __typenames__ = ["int64_t", "int32_t", "pose_xyt_t"]
+    __typenames__ = ["int64_t", "int8_t", "int32_t", "pose_xyt_t"]
 
-    __dimensions__ = [None, None, ["path_length"]]
+    __dimensions__ = [None, None, None, ["path_length"]]
 
     def __init__(self):
         self.utime = 0
+        self.rescue = 0
         self.path_length = 0
         self.path = []
 
@@ -30,7 +31,7 @@ class robot_path_t(object):
         return buf.getvalue()
 
     def _encode_one(self, buf):
-        buf.write(struct.pack(">qi", self.utime, self.path_length))
+        buf.write(struct.pack(">qbi", self.utime, self.rescue, self.path_length))
         for i0 in range(self.path_length):
             assert self.path[i0]._get_packed_fingerprint() == pose_xyt_t._get_packed_fingerprint()
             self.path[i0]._encode_one(buf)
@@ -47,7 +48,7 @@ class robot_path_t(object):
 
     def _decode_one(buf):
         self = robot_path_t()
-        self.utime, self.path_length = struct.unpack(">qi", buf.read(12))
+        self.utime, self.rescue, self.path_length = struct.unpack(">qbi", buf.read(13))
         self.path = []
         for i0 in range(self.path_length):
             self.path.append(pose_xyt_t._decode_one(buf))
@@ -57,7 +58,7 @@ class robot_path_t(object):
     def _get_hash_recursive(parents):
         if robot_path_t in parents: return 0
         newparents = parents + [robot_path_t]
-        tmphash = (0xd8a57fd0b3392990+ pose_xyt_t._get_hash_recursive(newparents)) & 0xffffffffffffffff
+        tmphash = (0xdee0cc52718d21d9+ pose_xyt_t._get_hash_recursive(newparents)) & 0xffffffffffffffff
         tmphash  = (((tmphash<<1)&0xffffffffffffffff) + (tmphash>>63)) & 0xffffffffffffffff
         return tmphash
     _get_hash_recursive = staticmethod(_get_hash_recursive)
