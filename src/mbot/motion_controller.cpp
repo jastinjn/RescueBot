@@ -18,6 +18,9 @@
 #include "maneuver_controller.h"
 
 
+bool reverse = 0;
+
+
 class StraightManeuverController : public ManeuverControllerBase
 {
 
@@ -45,6 +48,7 @@ public:
         float d_fwd = sqrt(pow(dx,2) + pow(dy,2));
         float d_theta = angle_diff(atan2(dy,dx), pose.theta);
 
+
         // PID separately for the fwd and the angular velocity output given the fwd and angular error
         fwd_sum_error += d_fwd;
         float fwd_der = 0;
@@ -61,6 +65,10 @@ public:
         
         float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
         // fprintf(stdout,"Turn error: %f\tTurn vel: %f\n", d_theta, turn_vel);
+        if(reverse){
+            //turn_vel = -turn_vel;
+            fwd_vel = -fwd_vel;
+        }
 
 
 
@@ -103,7 +111,9 @@ public:
         
         float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
         // fprintf(stdout,"Turn error: %f\tTurn vel: %f\tPose theta: %f\n", d_theta, turn_vel, pose.theta);
-
+        // if(reverse){
+        //     turn_vel = -turn_vel;
+        // }
         return {0, 0, turn_vel};
     }
     mbot_motor_command_t get_command_final_turn(const pose_xyt_t& pose, const pose_xyt_t& target)
@@ -117,7 +127,9 @@ public:
             turn_der = (d_theta - turn_last_error) / 0.05;
         
         float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
-
+        // if(reverse){
+        //     turn_vel = -turn_vel;
+        // }
         return {0, 0, turn_vel};
     }
 
@@ -173,6 +185,10 @@ public:
             pose_xyt_t target = targets_.back();
             bool is_last_target = targets_.size() == 1;
             pose_xyt_t pose = currentPose();
+            if(reverse){
+                pose.theta = wrap_to_pi(pose.theta + M_PI);
+                //target.theta = wrap_to_pi(target.theta + M_PI);
+            }
 
             ///////  TODO (Optional): Add different states when adding maneuver controls /////// 
             if(state_ == TURN)
@@ -212,7 +228,7 @@ public:
                 if(turn_controller.target_reached_final_turn(pose, target))
                 {
                     printf("final turn complete\n");
-                    targets_ = newTargets_;
+                    //targets_ = newTargets_;
 		            if(!assignNextTarget())
                     {
                         printf("Target reached! (%f,%f,%f)\n", target.x, target.y, target.theta);
@@ -224,7 +240,9 @@ public:
                 {
                     cmd = turn_controller.get_command_final_turn(pose, target);
                     cmd.utime = now();
+                    // printf("pose: %f target %f \n", pose.theta, target.theta);
                     printf("final turn\n");
+
                 }
             }
             else
@@ -246,6 +264,7 @@ public:
     void handlePath(const lcm::ReceiveBuffer* buf, const std::string& channel, const robot_path_t* path)
     {
         newTargets_ = path->path;
+        reverse = path->rescue;
         //targets_ = path->path;
 
         std::cout << "received new path at time: " << path->utime << "\n"; 
@@ -259,6 +278,7 @@ public:
         
         if (targets_.empty()){
             targets_ = newTargets_;
+            newTargets_.clear();
             assignNextTarget();
         }
 
