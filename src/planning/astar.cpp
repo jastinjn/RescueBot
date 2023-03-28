@@ -56,8 +56,7 @@ robot_path_t search_for_path(pose_xyt_t start,
     delete endNode;
     for(auto &n:open.elements){delete n;}
     for(auto &n:closed){delete n;}
-    //changed for testing
-    path.rescue = 1; //sets path as exploration path
+    path.rescue = 0; //sets path as exploration path
     return path;
 
 }
