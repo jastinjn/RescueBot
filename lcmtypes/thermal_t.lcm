@@ -1,0 +1,6 @@
+struct thermal_t
+{
+    int64_t utime;
+
+    float data[32][24];
+}
