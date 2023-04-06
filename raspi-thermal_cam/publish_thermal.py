@@ -6,6 +6,8 @@ import adafruit_mlx90640
 from thermal_t import thermal_t
 import lcm
 
+def current_utime(): return int(time.time() * 1e6)
+
 lc = lcm.LCM("udpm://239.255.76.67:7667?ttl=1")
 
 time.sleep(1.0)
@@ -33,7 +35,8 @@ while True:
         for w in range(32):
             curr_thermal.data[w][h] = frame[32 * (23-h) + w]
             sum += curr_thermal.data[w][h]
-
+    
+    curr_thermal.utime = current_utime()
     lc.publish("THERMAL", curr_thermal.encode())
     print("Thermal published")
 

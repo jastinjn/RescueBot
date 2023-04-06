@@ -47,6 +47,7 @@ def main():
             plt.pause(0.001) # required
             fig.savefig('mlx90640_test_fliplr.png',dpi=300,facecolor='#FCFCFC',
                         bbox_inches='tight') # comment out to speed up
+            print(cur_therm_values.utime)
         except ValueError:
             continue # if error, just read again
 

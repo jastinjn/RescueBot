@@ -53,6 +53,7 @@ OccupancyGridSLAM::OccupancyGridSLAM(int         numParticles,
     lcm_.subscribe(LIDAR_CHANNEL, &OccupancyGridSLAM::handleLaser, this);
     lcm_.subscribe(ODOMETRY_CHANNEL, &OccupancyGridSLAM::handleOdometry, this);
     lcm_.subscribe(TRUE_POSE_CHANNEL, &OccupancyGridSLAM::handleOptitrack, this);
+    lcm_.subscribe(THERMAL_DEPTH, &OccupancyGridSLAM::handleThermal, this);
     
     // If we are only building the occupancy grid using ground-truth poses, then subscribe to the ground-truth poses.
     if(mode_ == mapping_only)
@@ -81,15 +82,6 @@ void OccupancyGridSLAM::runSLAM(void)
         // Otherwise, do a quick spin while waiting for data rather than using more complicated condition variable.
         else
         {
-            for(int y = 0; y < thermalMap_.heightInCells(); ++y)
-            {
-                for(int x = 0; x < thermalMap_.widthInCells(); ++x)
-                {
-                    thermalMap_.setThermalValue(x,y,(x+y)%127);
-                }
-            }
-            auto thermalMessage = thermalMap_.toLCM();
-            lcm_.publish(THERMAL_MAP_CHANNEL, &thermalMessage);
             usleep(1000);
         }
     }
@@ -169,6 +161,12 @@ void OccupancyGridSLAM::handleOptitrack(const lcm::ReceiveBuffer* rbuf, const st
     }
 }
 
+void OccupancyGridSLAM::handleThermal(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const thermal_depth_t* thermal_data)
+{
+    std::lock_guard<std::mutex> autoLock(dataMutex_);
+    thermal_data_ = *thermal_data;    // for(int i = 0; i < 768; i++) {
+
+}
 
 bool OccupancyGridSLAM::isReadyToUpdate(void)
 {
@@ -287,6 +285,11 @@ void OccupancyGridSLAM::updateMap(void)
     {
         // Process the map
         mapper_.updateMap(currentScan_, currentPose_, map_);
+        std::cout << "Therm data temp 0: " << thermal_data_.temperature[0] << std::endl;
+        std::cout << "Therm data x 0: " << thermal_data_.distance_x[0] << std::endl;
+        std::cout << "Therm data y 0: " << thermal_data_.distance_y[0] << std::endl;
+        // thermalMap_.update(currentPose_, thermal_data_);
+
         haveMap_ = true;
     }
 
@@ -297,6 +300,9 @@ void OccupancyGridSLAM::updateMap(void)
         auto mapMessage = map_.toLCM();
         lcm_.publish(SLAM_MAP_CHANNEL, &mapMessage);
         map_.saveToFile("current.map");
+
+        // auto thermalMessage = thermalMap_.toLCM();
+        // lcm_.publish(THERMAL_MAP_CHANNEL, &thermalMessage);
 
     }
 

@@ -1,0 +1,9 @@
+struct thermal_depth_t
+{
+    int64_t utime;
+
+    float temperature[768]; // degrees celcius
+    float distance_x[768]; // horizontal offset in meters
+    float distance_y[768]; // depth in meters
+
+}

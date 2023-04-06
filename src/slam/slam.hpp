@@ -5,6 +5,7 @@
 #include <lcmtypes/odometry_t.hpp>
 #include <lcmtypes/pose_xyt_t.hpp>
 #include <lcmtypes/thermal_grid_t.hpp>
+#include <lcmtypes/thermal_depth_t.hpp>
 #include <slam/particle_filter.hpp>
 #include <slam/mapping.hpp>
 #include <common/pose_trace.hpp>
@@ -62,6 +63,8 @@ public:
     void handleOdometry(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const odometry_t* odometry);
     void handlePose    (const lcm::ReceiveBuffer* rbuf, const std::string& channel, const pose_xyt_t* pose);
     void handleOptitrack(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const pose_xyt_t* pose);
+    void handleThermal(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const thermal_depth_t* thermal_data);
+
 
 private:
     
@@ -84,6 +87,7 @@ private:
     std::deque<lidar_t> incomingScans_;
     PoseTrace groundTruthPoses_;
     PoseTrace odometryPoses_;
+    thermal_depth_t thermal_data_;
     
     // Data being used for current SLAM iteration
     lidar_t currentScan_;
