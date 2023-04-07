@@ -285,13 +285,16 @@ void OccupancyGridSLAM::updateMap(void)
     {
         // Process the map
         mapper_.updateMap(currentScan_, currentPose_, map_);
-        std::cout << "Therm data temp 0: " << thermal_data_.temperature[0] << std::endl;
-        std::cout << "Therm data x 0: " << thermal_data_.distance_x[0] << std::endl;
-        std::cout << "Therm data y 0: " << thermal_data_.distance_y[0] << std::endl;
+        // std::cout << "Therm data temp 0: " << thermal_data_.temperature[0] << std::endl;
+        // std::cout << "Therm data x 0: " << thermal_data_.distance_x[0] << std::endl;
+        // std::cout << "Therm data y 0: " << thermal_data_.distance_y[0] << std::endl;
         // thermalMap_.update(currentPose_, thermal_data_);
 
         haveMap_ = true;
     }
+
+    // Update thermal map 
+    mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_);
 
     // Publish the map even in localization-only mode to ensure the visualization is meaningful
     // Send every 5th map -- about 1Hz update rate for map output -- can change if want more or less during operation
@@ -301,8 +304,8 @@ void OccupancyGridSLAM::updateMap(void)
         lcm_.publish(SLAM_MAP_CHANNEL, &mapMessage);
         map_.saveToFile("current.map");
 
-        // auto thermalMessage = thermalMap_.toLCM();
-        // lcm_.publish(THERMAL_MAP_CHANNEL, &thermalMessage);
+        auto thermalMessage = thermalMap_.toLCM();
+        lcm_.publish(THERMAL_MAP_CHANNEL, &thermalMessage);
 
     }
 

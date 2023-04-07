@@ -2,6 +2,9 @@
 #define SLAM_MAPPING_HPP
 
 #include <lcmtypes/pose_xyt_t.hpp>
+#include <lcmtypes/thermal_depth_t.hpp>
+#include <slam/occupancy_grid.hpp>
+#include <slam/thermal_grid.hpp>
 #include <cstdint>
 
 class OccupancyGrid;
@@ -32,6 +35,8 @@ public:
     * \param    map             OccupancyGrid instance to be updated
     */
     void updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGrid& map);
+
+    void updateThermalMap(const thermal_depth_t &thermal_depth, const pose_xyt_t &pose, ThermalGrid &map);
 
 private:
     

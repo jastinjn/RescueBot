@@ -122,17 +122,51 @@ void draw_thermal_grid(const ThermalGrid& grid, vx_buffer_t* buffer)
 {
     ////////////////// TODO: Draw OccupancyGrid as specified in assignment ////////////////////////////
     
-    image_u8_t* gridImg = image_u8_create(grid.widthInCells(), grid.heightInCells());
+    image_u32_t* gridImg = image_u32_create(grid.widthInCells(), grid.heightInCells());
     
     for(int y = 0; y < grid.heightInCells(); ++y)
     {
         for(int x = 0; x < grid.widthInCells(); ++x)
         {
-            gridImg->buf[gridImg->stride*y + x] = grid(x, y);
+            int index = x + y*gridImg->stride;
+            if(grid(x, y) <= 21)
+            {
+                gridImg->buf[index] = 0xFFFFFFFF; // white
+            }
+            else if(grid(x, y) <= 26)
+            {
+                gridImg->buf[index] = 0xFF0000FF; // blue
+            }
+            else if(grid(x, y) <= 32)
+            {
+                gridImg->buf[index] = 0xFF00FFFF; // green-blue
+            }
+            else if(grid(x, y) <= 37)
+            {
+                gridImg->buf[index] = 0xFFFFFF00; // yellow
+            }
+            else if(grid(x, y) <= 45)
+            {
+                gridImg->buf[index] = 0xFFFFA500; // orange
+            }
+            else if(grid(x, y) <= 60)
+            {
+                gridImg->buf[index] = 0xFFFF3232; // hotpink
+            }
+            else if(grid(x, y) <= 80)
+            {
+                gridImg->buf[index] = 0xFF0000FF; // red
+            }
+            else // inside the collision zone
+            {
+                gridImg->buf[index] = 0xFF000000; // black
+            }
+            
+
         }
     }
-
-    vx_object_t* gridObject = vxo_image_from_u8(gridImg, 0, VX_TEX_MIN_FILTER);
+    
+    vx_object_t* gridObject = vxo_image_from_u32(gridImg, 0, VX_TEX_MIN_FILTER);
     vx_buffer_add_back(buffer, 
                        vxo_chain(vxo_mat_translate3(grid.originInGlobalFrame().x,
                                                     grid.originInGlobalFrame().y,
@@ -140,7 +174,7 @@ void draw_thermal_grid(const ThermalGrid& grid, vx_buffer_t* buffer)
                                  vxo_mat_scale(grid.metersPerCell()),
                        gridObject));
 
-    image_u8_destroy(gridImg);
+    image_u32_destroy(gridImg);
 }
 
 void draw_particles(const particles_t& particles, vx_buffer_t* buffer)

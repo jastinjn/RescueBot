@@ -25,10 +25,10 @@ config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 15)
 
 # Start streaming
 profile = pipeline.start(config)
-device = profile.get_device() # type: rs.device
-depthSensor = device.first_depth_sensor() # type: rs.depth_sensor
+# device = profile.get_device() # type: rs.device
+# depthSensor = device.first_depth_sensor() # type: rs.depth_sensor
 # if depthSensor.supports(rs.option.depth_units):
-#     depthSensor.set_option(rs.option.depth_units, 1.0)
+#     depthSensor.set_option(rs.option.depth_units, 1.000)
 
 # Initialize LCM handler
 lc = lcm.LCM("udpm://239.255.76.67:7667?ttl=1")
@@ -49,7 +49,7 @@ try:
                 thermal_array = (np.reshape(frame,mlx_shape)) # reshape to 24x32
                 # thermal_array = thermal_array.astype(np.intc)
                 thermal_array = np.asanyarray(thermal_array, dtype = float)
-                thermal_img = cv2.flip(thermal_array, 1)
+                thermal_array = cv2.flip(thermal_array, 1)
 
         except ValueError:
                 continue # if error, just read again
@@ -78,14 +78,25 @@ try:
         ## pack data in lcm
         message = thermal_depth_t()
         message.utime = current_utime()
-        message.distance_x = horiz_offset.flatten()
-        message.distance_y = depth_image.flatten()
-        message.temperature = thermal_img.flatten()
+        message.distance_y = -horiz_offset.flatten()
+        message.distance_x = depth_image.flatten()
+        message.temperature = thermal_array.flatten()
 
         # print(horiz_offset[7][31])
-        # print(message.temperature)
+        # print(depth_image[0][0])
 
-        
+        # visualization
+        # thermal_img = cv2.normalize(thermal_array, None, 0, 225, cv2.NORM_MINMAX, cv2.CV_8U)
+        # thermal_img = cv2.applyColorMap(thermal_img, cv2.COLORMAP_JET)  
+        # cv2.namedWindow('Thermal', cv2.WINDOW_NORMAL)
+        # cv2.imshow('Thermal', thermal_img)
+        # cv2.waitKey(1)
+
+        # Apply colormap on depth image (image must be converted to 8-bit per pixel first)
+        # depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+        # cv2.namedWindow('RealSense Depth', cv2.WINDOW_NORMAL)
+        # cv2.imshow('RealSense Depth', depth_colormap)
+        # cv2.waitKey(1)
 
         lc.publish("THERMAL_DEPTH", message.encode())
         print("Sent lcm...")

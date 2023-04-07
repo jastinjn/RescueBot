@@ -1,11 +1,12 @@
 #include <slam/mapping.hpp>
 #include <slam/moving_laser_scan.hpp>
-#include <slam/occupancy_grid.hpp>
 #include <common/grid_utils.hpp>
 #include <numeric>
 
 Point<float> rayStart;
 Point<int> rayCell;
+Point<int> thermalCell;
+int8_t threshold_temp = 50;
 
 Mapping::Mapping(float maxLaserDistance, int8_t hitOdds, int8_t missOdds)
 : kMaxLaserDistance_(maxLaserDistance)
@@ -31,6 +32,36 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
 
     initialized_ = true;
     previousPose_ = pose;
+}
+
+void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_xyt_t &pose, ThermalGrid &map){
+
+    float c = std::cos(pose.theta);
+    float s = std::sin(pose.theta);
+    Point<double> globalPose = Point<double>(pose.x,pose.y);
+    Point<int> cellPose = global_position_to_grid_cell(globalPose, map);
+
+    for (int i = 0; i < 768; ++i){
+        float temp_raw = thermal_depth.temperature[i];
+        int8_t cell_temp = (temp_raw > 127.0) ? 127 : static_cast<int8_t>(temp_raw);
+        if (cell_temp > threshold_temp){
+            float dist_x_meters = thermal_depth.distance_x[i]/1000.0;
+            float dist_y_meters = thermal_depth.distance_y[i]/1000.0; 
+
+            thermalCell.x = static_cast<int>((c*dist_x_meters - s*dist_y_meters) * map.cellsPerMeter() + cellPose.x);
+            thermalCell.y = static_cast<int>((s*dist_x_meters + c*dist_y_meters) * map.cellsPerMeter() + cellPose.y);
+
+            std::cout << "thermal raw: " << thermal_depth.distance_x[i] << " " << thermal_depth.distance_y[i] << " " << thermal_depth.temperature[i] << "\n";
+            std::cout << "thermal point: " << thermalCell.x << " " << thermalCell.y << " " << static_cast<int>(cell_temp) << "\n";
+
+            if (map.isCellInGrid(thermalCell.x, thermalCell.y) && map.thermalValue(thermalCell.x, thermalCell.y) < cell_temp){
+                map.setThermalValue(thermalCell.x, thermalCell.y, cell_temp);
+                std::cout << "added thermal point \n";
+            }
+        }
+    }
+
+    
 }
 
 void Mapping::scoreEndpoint(const adjusted_ray_t &ray, OccupancyGrid &map){
