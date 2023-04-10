@@ -27,6 +27,8 @@
 #include <vx/vxo_circle.h>
 #include <vx/vxo_points.h>
 
+#include <algorithm>
+
 
 
 
@@ -182,9 +184,11 @@ void draw_thermal_grid(const ThermalGrid& grid, vx_buffer_t* buffer)
             //     gridImg->buf[index] = 0xFFb01111; // red
             // }
 
-            //if(grid(x, y) > 40){
-                gridImg->buf[index] = 0x0000FF + (static_cast<uint32_t>((255.0 * static_cast<float>(grid(x, y))/ 127.0)) << 24); // red
-            //}
+            float opacity = (grid(x, y)-30.0)/ 25.0;
+            opacity = (opacity > 1.0) ? 1.0 : (opacity < 0.0) ? 0 : opacity;
+            gridImg->buf[index] = 0x0000FF + (static_cast<uint32_t>((255.0 * opacity)) << 24); // red
+            
+            
 
         }
     }

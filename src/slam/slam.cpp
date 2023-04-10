@@ -19,6 +19,7 @@ OccupancyGridSLAM::OccupancyGridSLAM(int         numParticles,
 , waitingForOptitrack_(waitForOptitrack)
 , haveMap_(false)
 , numIgnoredScans_(0)
+, hasNewThermalData_(false)
 , filter_(numParticles)
 , map_(10.0f, 10.0f, 0.05f) //30,30,0.1  // create a 10m x 10m grid with 0.05m cells
 , thermalMap_(10.0f, 10.0f, 0.05f)
@@ -165,7 +166,7 @@ void OccupancyGridSLAM::handleThermal(const lcm::ReceiveBuffer* rbuf, const std:
 {
     std::lock_guard<std::mutex> autoLock(dataMutex_);
     thermal_data_ = *thermal_data;    // for(int i = 0; i < 768; i++) {
-
+    hasNewThermalData_ = true;
 }
 
 bool OccupancyGridSLAM::isReadyToUpdate(void)
@@ -294,7 +295,11 @@ void OccupancyGridSLAM::updateMap(void)
     }
 
     // Update thermal map 
-    mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_);
+    if (hasNewThermalData_){
+        mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_);
+        hasNewThermalData_ = false;
+    }
+        
 
     // Publish the map even in localization-only mode to ensure the visualization is meaningful
     // Send every 5th map -- about 1Hz update rate for map output -- can change if want more or less during operation

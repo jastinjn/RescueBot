@@ -60,7 +60,7 @@ bool ThermalGrid::isCellInGrid(int x, int y) const
 }
 
 
-int8_t ThermalGrid::thermalValue(int x, int y) const
+float ThermalGrid::thermalValue(int x, int y) const
 {
     if(isCellInGrid(x, y))
     {
@@ -71,7 +71,7 @@ int8_t ThermalGrid::thermalValue(int x, int y) const
 }
 
 
-void ThermalGrid::setThermalValue(int x, int y, int8_t value)
+void ThermalGrid::setThermalValue(int x, int y, float value)
 {
     if(isCellInGrid(x, y))
     {

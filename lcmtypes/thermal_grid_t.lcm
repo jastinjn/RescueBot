@@ -10,5 +10,5 @@ struct thermal_grid_t
     int32_t height;
     int32_t num_cells;
     
-    int8_t cells[num_cells];
+    float cells[num_cells];
 }

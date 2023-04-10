@@ -82,6 +82,7 @@ private:
     bool waitingForOptitrack_;
     bool haveMap_;
     int  numIgnoredScans_;
+    bool hasNewThermalData_;
     
     // Data from LCM
     std::deque<lidar_t> incomingScans_;

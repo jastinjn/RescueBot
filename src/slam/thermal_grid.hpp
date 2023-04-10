@@ -80,7 +80,7 @@ public:
     * \return   The log-odds at cell (x,y). If (x,y) is not contained in the grid, i.e. isCellInGrid(x,y) == false,
     *           then 0 is returned. This is equivalent to the log-odds of an unobserved cell in the map.
     */
-    int8_t thermalValue(int x, int y) const;
+    float thermalValue(int x, int y) const;
     
     /**
     * setLogOdds sets the log-odds of occupancy for the specified cell if the cell falls within the grid boundary. If the
@@ -90,7 +90,7 @@ public:
     * \param    y           y-coordinate of the cell
     * \param    logOdds     Log-odds to assign to the cell
     */
-    void setThermalValue(int x, int y, int8_t value);
+    void setThermalValue(int x, int y, float value);
     
     /**
     * operator() provides unchecked access to the cell located at (x,y). If the cell isn't contained in the grid,
@@ -102,7 +102,7 @@ public:
     * \param    y           y-coordinate of the cell
     * \return   A mutable reference to the cell (x,y)'s logOdds.
     */
-    int8_t& operator()(int x, int y)       { return cells_[cellIndex(x, y)]; }
+    float& operator()(int x, int y)       { return cells_[cellIndex(x, y)]; }
     
     /**
     * operator() provides unchecked access to the cell located at (x,y). If the cell isn't contained in the grid,
@@ -112,7 +112,7 @@ public:
     * \param    y           y-coordinate of the cell
     * \return   The logOdds of cell (x, y).
     */
-    int8_t  operator()(int x, int y) const { return cells_[cellIndex(x, y)]; }
+    float  operator()(int x, int y) const { return cells_[cellIndex(x, y)]; }
 
     /**
     * toLCM creates an LCM message from the grid.
@@ -155,7 +155,7 @@ public:
     
 private:
     
-    std::vector<int8_t> cells_;       ///< The actual grid -- stored in row-column order
+    std::vector<float> cells_;       ///< The actual grid -- stored in row-column order
     
     int width_;                 ///< Width of the grid in cells
     int height_;                ///< Height of the grid in cells
