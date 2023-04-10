@@ -53,5 +53,4 @@ private:
 
     std::vector<adjusted_ray_t> adjustedRays_;
 };
-
 #endif // SLAM_MOVING_LASER_SCAN_HPP

@@ -129,39 +129,62 @@ void draw_thermal_grid(const ThermalGrid& grid, vx_buffer_t* buffer)
         for(int x = 0; x < grid.widthInCells(); ++x)
         {
             int index = x + y*gridImg->stride;
-            if(grid(x, y) <= 21)
-            {
-                gridImg->buf[index] = 0xFFFFFFFF; // white
-            }
-            else if(grid(x, y) <= 26)
-            {
-                gridImg->buf[index] = 0xFF0000FF; // blue
-            }
-            else if(grid(x, y) <= 32)
-            {
-                gridImg->buf[index] = 0xFF00FFFF; // green-blue
-            }
-            else if(grid(x, y) <= 37)
-            {
-                gridImg->buf[index] = 0xFFFFFF00; // yellow
-            }
-            else if(grid(x, y) <= 45)
-            {
-                gridImg->buf[index] = 0xFFFFA500; // orange
-            }
-            else if(grid(x, y) <= 60)
-            {
-                gridImg->buf[index] = 0xFFFF3232; // hotpink
-            }
-            else if(grid(x, y) <= 80)
-            {
-                gridImg->buf[index] = 0xFF0000FF; // red
-            }
-            else // inside the collision zone
-            {
-                gridImg->buf[index] = 0xFF000000; // black
-            }
-            
+            // if(grid(x, y) <= 21)
+            // {
+            //     gridImg->buf[index] = 0xFFFFFFFF; // white
+            // }
+            // else 
+            // if(grid(x, y) <= 26 && grid(x, y) <= 21)
+            // {
+            //     gridImg->buf[index] = 0xFF0000FF; // blue
+            // }
+            // else if(grid(x, y) <= 32)
+            // {
+            //     gridImg->buf[index] = 0xFF00FFFF; // green-blue
+            // }
+            // else if(grid(x, y) <= 37)
+            // {
+            //     gridImg->buf[index] = 0xFFFFFF00; // yellow
+            // }
+            // else if(grid(x, y) <= 45)
+            // {
+            //     gridImg->buf[index] = 0xFFFFA500; // orange
+            // }
+            // else if(grid(x, y) <= 60)
+            // {
+            //     gridImg->buf[index] = 0xFFFF3232; // hotpink
+            // }
+            // else if(grid(x, y) <= 80)
+            // {
+            //     gridImg->buf[index] = 0xFF0000FF; // red
+            // }
+            // else 
+            // {
+            //     gridImg->buf[index] = 0xFF000000; // black
+            // }
+            // if(grid(x, y) > 40 && grid(x, y) < 60){
+            //     gridImg->buf[index] = 0x06b01111; // red
+            // }
+            // else if(grid(x, y) >= 60 && grid(x, y) < 80)
+            // {
+            //     gridImg->buf[index] = 0x08b01111; // orange
+            // }
+            // else if(grid(x, y) >= 80 &&  grid(x, y) < 100)
+            // {
+            //     gridImg->buf[index] = 0x10b01111; // hotpink
+            // }
+            // else if(grid(x, y) >= 100 &&  grid(x, y) < 120)
+            // {
+            //     gridImg->buf[index] = 0xDDb01111; // red
+            // }
+            // else if(grid(x, y) >= 120)
+            // {
+            //     gridImg->buf[index] = 0xFFb01111; // red
+            // }
+
+            //if(grid(x, y) > 40){
+                gridImg->buf[index] = 0x0000FF + (static_cast<uint32_t>((255.0 * static_cast<float>(grid(x, y))/ 127.0)) << 24); // red
+            //}
 
         }
     }

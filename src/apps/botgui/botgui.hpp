@@ -87,7 +87,7 @@ private:
     std::vector<OccupancyGrid> wifi_maps;
     std::map<std::string, Trace> traces_;           // Storage of all received pose traces
     OccupancyGrid map_;                             // Current OccupancyGrid of the robot environment
-    ThermalGrid tmap_;                             // Current OccupancyGrid of the robot environment
+    ThermalGrid tmap_;                             // Current ThermalGrid of the robot environment
     lidar_t laser_;                         // Most recent laser scan
     ObstacleDistanceGrid distances_;                // Distance grid to output the configuration space of the robot
     std::vector<frontier_t> frontiers_;             // Frontiers in the current map

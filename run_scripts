@@ -1,0 +1,10 @@
+#!/bin/bash
+
+gnome-terminal
+gnome-terminal --tab -- /bin/bash -c "./bin/shim"
+gnome-terminal --tab -- /bin/bash -c  "./bin/timesync"
+gnome-terminal --tab -- /bin/bash -c "./bin/rplidar_driver"
+gnome-terminal --tab -- /bin/bash -c  "./bin/motion_controller"
+gnome-terminal --tab -- /bin/bash -c  "./bin/slam"
+gnome-terminal --tab -- /bin/bash -c  ". setenv.sh; ./bin/botgui"
+gnome-terminal --tab -- /bin/bash -c  "cd python; python3 realsense_thermal.py"
