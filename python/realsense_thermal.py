@@ -78,7 +78,7 @@ try:
         ## pack data in lcm
         message = thermal_depth_t()
         message.utime = current_utime()
-        message.distance_y = horiz_offset.flatten()
+        message.distance_y = -horiz_offset.flatten()
         message.distance_x = depth_image.flatten()
         message.temperature = thermal_array.flatten()
 

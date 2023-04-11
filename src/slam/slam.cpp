@@ -2,6 +2,7 @@
 #include <slam/slam_channels.h>
 #include <mbot/mbot_channels.h>
 #include <optitrack/optitrack_channels.h>
+#include <common/angle_functions.hpp>
 #include <unistd.h>
 #include <cassert>
 #include <chrono>
@@ -294,11 +295,23 @@ void OccupancyGridSLAM::updateMap(void)
         haveMap_ = true;
     }
 
-    // Update thermal map 
+    // float deltaX = currentPose_.x - previousPose_.x;
+    // float deltaY = currentPose_.y - previousPose_.y;
+    // float deltaTheta = angle_diff(currentPose_.theta, previousPose_.theta);
+
+    // // Update thermal map 
+    // bool moved = (deltaX!=0) || (deltaY!=0) || (deltaTheta!=0);
+    // if (hasNewThermalData_ && !moved){
+    //     mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_);
+    //     hasNewThermalData_ = false;
+    // }
+    
     if (hasNewThermalData_){
         mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_);
         hasNewThermalData_ = false;
     }
+
+
         
 
     // Publish the map even in localization-only mode to ensure the visualization is meaningful
