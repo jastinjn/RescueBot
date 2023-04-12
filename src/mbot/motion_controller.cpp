@@ -15,6 +15,8 @@
 #include <iostream>
 #include <cassert>
 #include <signal.h>
+#include <unistd.h>
+#include <common/time_util.h>
 #include "maneuver_controller.h"
 
 
@@ -65,10 +67,10 @@ public:
         
         float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
         // fprintf(stdout,"Turn error: %f\tTurn vel: %f\n", d_theta, turn_vel);
-        if(reverse){
-            //turn_vel = -turn_vel;
-            fwd_vel = -fwd_vel;
-        }
+        // if(reverse){
+        //     //turn_vel = -turn_vel;
+        //     fwd_vel = -fwd_vel;
+        // }
 
 
 
@@ -185,10 +187,10 @@ public:
             pose_xyt_t target = targets_.back();
             bool is_last_target = targets_.size() == 1;
             pose_xyt_t pose = currentPose();
-            if(reverse){
-                pose.theta = wrap_to_pi(pose.theta + M_PI);
-                //target.theta = wrap_to_pi(target.theta + M_PI);
-            }
+            // if(reverse){
+            //     pose.theta = wrap_to_pi(pose.theta + M_PI);
+            //     //target.theta = wrap_to_pi(target.theta + M_PI);
+            // }
 
             ///////  TODO (Optional): Add different states when adding maneuver controls /////// 
             if(state_ == TURN)
@@ -228,12 +230,28 @@ public:
                 if(turn_controller.target_reached_final_turn(pose, target))
                 {
                     printf("final turn complete\n");
-                    //targets_ = newTargets_;
+                    if (!newTargets_.empty()){
+                        targets_ = newTargets_;
+                        newTargets_.clear();
+                    }
+                    
 		            if(!assignNextTarget())
                     {
                         printf("Target reached! (%f,%f,%f)\n", target.x, target.y, target.theta);
-                        targets_ = newTargets_;
-                        assignNextTarget();
+                        state_ = SPIN;
+                        spin_start_time = now();
+                        // cmd = {0, 0, M_PI/6};
+                        // lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+                        // //usleep(12000000);
+                        // sleep(12);
+                        // std::cout << "spin complete\n";
+                        // cmd = {0, 0, 0};
+                        // lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+                        // std::cout << "post-spin rest\n"
+                        // sleep(1);
+                        // targets_ = newTargets_;
+                        // newTargets_.clear();
+                        // assignNextTarget();
                     }
                 } 
                 else
@@ -244,6 +262,22 @@ public:
                     printf("final turn\n");
 
                 }
+            }
+            else if (state_ == SPIN){
+                cmd = {0, 0, M_PI/6};
+                std::cout << "spin\n";
+
+                int64_t current_time = now();
+                if ((current_time - spin_start_time)/10000000 >= 12){
+                    targets_ = newTargets_;
+                    newTargets_.clear();
+                    assignNextTarget();
+                }
+                //usleep(12000);
+                // std::cout << "spin complete\n";
+                // targets_ = newTargets_;
+                // newTargets_.clear();
+                // assignNextTarget();
             }
             else
             {
@@ -304,7 +338,8 @@ private:
     {
         TURN,
         FINAL_TURN, // to get to the pose heading
-        DRIVE
+        DRIVE,
+        SPIN,
     };
     
     pose_xyt_t odomToGlobalFrame_;      // transform to convert odometry into the global/map coordinates for navigating in a map
@@ -322,6 +357,8 @@ private:
  
     TurnManeuverController turn_controller;
     StraightManeuverController straight_controller;
+
+    int64_t spin_start_time;
 
     int64_t now()
     {

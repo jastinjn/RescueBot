@@ -49,14 +49,14 @@ robot_path_t MotionPlanner::planPath(const pose_xyt_t& start, const pose_xyt_t& 
 
 bool MotionPlanner::isValidGoal(const pose_xyt_t& goal) const
 {
-    //return true;
-    float dx = goal.x - prev_goal.x, dy = goal.y - prev_goal.y;
-    float distanceFromPrev = std::sqrt(dx * dx + dy * dy);
+    // //return true;
+    // float dx = goal.x - prev_goal.x, dy = goal.y - prev_goal.y;
+    // float distanceFromPrev = std::sqrt(dx * dx + dy * dy);
 
-    //if there's more than 1 frontier, don't go to a target that is within a robot diameter of the current pose
-        //std::cout << "1\n";
-    if(num_frontiers != 1 && distanceFromPrev < 2 * searchParams_.minDistanceToObstacle) return false;
-        //std::cout << "2\n";
+    // //if there's more than 1 frontier, don't go to a target that is within a robot diameter of the current pose
+    //     //std::cout << "1\n";
+    // if(num_frontiers != 1 && distanceFromPrev < 2 * searchParams_.minDistanceToObstacle) return false;
+    //     //std::cout << "2\n";
     auto goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances_);
 
     // A valid goal is in the grid

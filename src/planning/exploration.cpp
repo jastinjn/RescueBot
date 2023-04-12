@@ -286,11 +286,11 @@ int8_t Exploration::executeExploringMap(bool initialize)
         case exploration_status_t::STATUS_COMPLETE:
             std::cout << "Complete, heading home\n";
             return exploration_status_t::STATE_RETURNING_HOME;
-            
+
         // If something has gone wrong and we can't reach all frontiers, then fail the exploration.
         case exploration_status_t::STATUS_FAILED:
             return exploration_status_t::STATE_FAILED_EXPLORATION;
-            
+
         default:
             std::cerr << "ERROR: Exploration::executeExploringMap: Set an invalid exploration status. Exploration failed!";
             return exploration_status_t::STATE_FAILED_EXPLORATION;
@@ -310,7 +310,7 @@ int8_t Exploration::executeReturningHome(bool initialize)
     */
     planner_.setMap(currentMap_);
     currentPath_ = planner_.planPath(currentPose_,homePose_);
-    currentPath_.rescue = 1;        //sets path to rescue path
+    currentPath_.rescue = 0;        //sets path to rescue path
     std::cout<< "return home start\n";
 
 
@@ -337,7 +337,8 @@ int8_t Exploration::executeReturningHome(bool initialize)
     // Else, there's no valid path to follow and we aren't home, so we have failed.
     else
     {
-        status.status = exploration_status_t::STATUS_FAILED;
+        //status.status = exploration_status_t::STATUS_FAILED;
+        status.status = exploration_status_t::STATE_RETURNING_HOME;
         std::cout << "home failed\n";
     }
     
@@ -348,7 +349,7 @@ int8_t Exploration::executeReturningHome(bool initialize)
     {
         return exploration_status_t::STATE_RETURNING_HOME;
     }
-    else // if(status.status == exploration_status_t::STATUS_FAILED)
+    else if(status.status == exploration_status_t::STATUS_FAILED)
     {
         return exploration_status_t::STATE_FAILED_EXPLORATION;
     }
