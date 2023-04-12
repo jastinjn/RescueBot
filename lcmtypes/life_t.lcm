@@ -1,0 +1,7 @@
+struct life_t
+{
+    int64_t utime;
+
+    int8_t life_detected;
+    float distance;
+}

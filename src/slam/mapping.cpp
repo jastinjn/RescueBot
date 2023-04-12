@@ -41,11 +41,12 @@ void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_
     float s = std::sin(pose.theta);
     Point<double> globalPose = Point<double>(pose.x,pose.y);
     Point<int> cellPose = global_position_to_grid_cell(globalPose, map);
+    bool life_detected;
+    float nearest_source = std::numeric_limits<float>::max();
 
-    for (int i = 0; i < 768; ++i){
+    for (int i = 256; i < 768; ++i){
 
         float temp_raw = thermal_depth.temperature[i];
-        //int8_t cell_temp = (temp_raw > 127.0) ? 127 : static_cast<int8_t>(temp_raw);
         float dist_x_meters = thermal_depth.distance_x[i]/1000.0;
         float dist_y_meters = thermal_depth.distance_y[i]/1000.0;
 
@@ -53,7 +54,10 @@ void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_
         //     continue;
         // }  
 
-        if (dist_x_meters < 0.4|| dist_x_meters > 1.5){
+        if (temp_raw > 30.0) life_detected = true;
+        if (dist_x_meters < nearest_source) nearest_source = dist_x_meters;
+
+        if (dist_x_meters < 0.3|| dist_x_meters > 2.0){
              continue;
         }  
 
@@ -70,7 +74,7 @@ void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_
         if (map.isCellInGrid(thermalCell.x, thermalCell.y)){
             float prevVal = map.thermalValue(thermalCell.x, thermalCell.y);
             if (temp_raw > prevVal){
-                map.setThermalValue(thermalCell.x, thermalCell.y, prevVal + 3.0);
+                map.setThermalValue(thermalCell.x, thermalCell.y, prevVal + 5.0);
             }
             else{
                 map.setThermalValue(thermalCell.x, thermalCell.y, prevVal - 0.3);

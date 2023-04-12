@@ -247,7 +247,18 @@ int8_t Exploration::executeExploringMap(bool initialize)
     frontiers_ = find_map_frontiers(currentMap_,currentPose_);
     planner_.setMap(currentMap_);
     currentPath_ = plan_path_to_frontier(frontiers_,currentPose_,currentMap_,planner_);
-    
+
+
+    // const double thetas[5] = {0,M_PI_2,M_PI,-M_PI_2,0};
+    // for(int i=0; i < 5; i++){
+    //     pose_xyt_t spin_pose;
+    //     spin_pose.x =  currentPath_.path[3].x;
+    //     spin_pose.y =  currentPath_.path[3].y;
+    //     spin_pose.theta = thetas[i];
+    //     currentPath_.path.insert(currentPath_.path.begin() + 3, spin_pose);
+    // }
+    // currentPath_.path_length += 5;
+
     /////////////////////////////// End student code ///////////////////////////////
     
     /////////////////////////   Create the status message    //////////////////////////
@@ -310,8 +321,19 @@ int8_t Exploration::executeReturningHome(bool initialize)
     */
     planner_.setMap(currentMap_);
     currentPath_ = planner_.planPath(currentPose_,homePose_);
-    currentPath_.rescue = 0;        //sets path to rescue path
+    currentPath_.rescue = 1;        //sets path to rescue path
     std::cout<< "return home start\n";
+    
+    // pose_xyt_t last_pose = currentPath_.path.back();
+    // const double thetas[5] = {0,M_PI_2,M_PI,-M_PI_2,0};
+    // for(int i=0; i < 5; i++){
+    //     pose_xyt_t spin_pose;
+    //     spin_pose.x = last_pose.x;
+    //     spin_pose.y = last_pose.y;
+    //     spin_pose.theta = thetas[i];
+    //     currentPath_.path.push_back(spin_pose);
+    // }
+    // currentPath_.path_length += 5;
 
 
     /////////////////////////////// End student code ///////////////////////////////

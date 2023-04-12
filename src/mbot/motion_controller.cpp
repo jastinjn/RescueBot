@@ -67,10 +67,9 @@ public:
         
         float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
         // fprintf(stdout,"Turn error: %f\tTurn vel: %f\n", d_theta, turn_vel);
-        // if(reverse){
-        //     //turn_vel = -turn_vel;
-        //     fwd_vel = -fwd_vel;
-        // }
+        if(reverse){
+            fwd_vel = -fwd_vel;
+        }
 
 
 
@@ -113,9 +112,6 @@ public:
         
         float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
         // fprintf(stdout,"Turn error: %f\tTurn vel: %f\tPose theta: %f\n", d_theta, turn_vel, pose.theta);
-        // if(reverse){
-        //     turn_vel = -turn_vel;
-        // }
         return {0, 0, turn_vel};
     }
     mbot_motor_command_t get_command_final_turn(const pose_xyt_t& pose, const pose_xyt_t& target)
@@ -129,9 +125,6 @@ public:
             turn_der = (d_theta - turn_last_error) / 0.05;
         
         float turn_vel = turn_pid[0] * d_theta + turn_pid[1] * turn_sum_error + turn_pid[2] * turn_der;
-        // if(reverse){
-        //     turn_vel = -turn_vel;
-        // }
         return {0, 0, turn_vel};
     }
 
@@ -151,8 +144,6 @@ public:
 
 };
 
-
-
 class MotionController
 { 
 public: 
@@ -166,7 +157,7 @@ public:
         odomToGlobalFrame_{0, 0, 0, 0}
     {
         subscribeToLcm();
-
+        last_spin = utime_now();
 	    time_offset = 0;
 	    timesync_initialized_ = false;
     } 
@@ -187,12 +178,18 @@ public:
             pose_xyt_t target = targets_.back();
             bool is_last_target = targets_.size() == 1;
             pose_xyt_t pose = currentPose();
-            // if(reverse){
-            //     pose.theta = wrap_to_pi(pose.theta + M_PI);
-            //     //target.theta = wrap_to_pi(target.theta + M_PI);
-            // }
+            //std::cout << "targets size " << targets_.size() << std::endl;
+            if(reverse){
+                pose.theta = wrap_to_pi(pose.theta + M_PI);
+                //target.theta = wrap_to_pi(target.theta + M_PI);
+            }
 
             ///////  TODO (Optional): Add different states when adding maneuver controls /////// 
+            // if(utime_now() - last_spin > 1e+7)
+            // {
+            //     if(angle_diff(pose.theta, 360) )
+            //     cmd = {0, 0, M_PI/6};
+            // }
             if(state_ == TURN)
             { 
                 if(turn_controller.target_reached(pose, target, is_last_target))
@@ -238,20 +235,9 @@ public:
 		            if(!assignNextTarget())
                     {
                         printf("Target reached! (%f,%f,%f)\n", target.x, target.y, target.theta);
-                        state_ = SPIN;
-                        spin_start_time = now();
-                        // cmd = {0, 0, M_PI/6};
-                        // lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
-                        // //usleep(12000000);
-                        // sleep(12);
-                        // std::cout << "spin complete\n";
-                        // cmd = {0, 0, 0};
-                        // lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
-                        // std::cout << "post-spin rest\n"
-                        // sleep(1);
-                        // targets_ = newTargets_;
-                        // newTargets_.clear();
-                        // assignNextTarget();
+                        targets_ = newTargets_;
+                        newTargets_.clear();
+                        assignNextTarget();
                     }
                 } 
                 else
@@ -262,22 +248,6 @@ public:
                     printf("final turn\n");
 
                 }
-            }
-            else if (state_ == SPIN){
-                cmd = {0, 0, M_PI/6};
-                std::cout << "spin\n";
-
-                int64_t current_time = now();
-                if ((current_time - spin_start_time)/10000000 >= 12){
-                    targets_ = newTargets_;
-                    newTargets_.clear();
-                    assignNextTarget();
-                }
-                //usleep(12000);
-                // std::cout << "spin complete\n";
-                // targets_ = newTargets_;
-                // newTargets_.clear();
-                // assignNextTarget();
             }
             else
             {
@@ -293,6 +263,7 @@ public:
     {
 	    timesync_initialized_ = true;
 	    time_offset = timesync->utime-utime_now();
+
     }
     
     void handlePath(const lcm::ReceiveBuffer* buf, const std::string& channel, const robot_path_t* path)
@@ -300,6 +271,8 @@ public:
         newTargets_ = path->path;
         reverse = path->rescue;
         //targets_ = path->path;
+        if(reverse)
+            std::cout << "driving in reverse" << std::endl;
 
         std::cout << "received new path at time: " << path->utime << "\n"; 
     	for(auto pose : newTargets_)
@@ -332,6 +305,15 @@ public:
         computeOdometryOffset(*pose);
     }
 
+    void spinAround(){
+        mbot_motor_command_t cmd {0, 0, M_PI/6};
+        lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+        sleep(12);
+        std::cout << "spin complete\n";
+        cmd = {0, 0, 0};
+        lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+    }
+
 private:
     
     enum State
@@ -346,10 +328,9 @@ private:
     PoseTrace  odomTrace_;              // trace of odometry for maintaining the offset estimate
     std::vector<pose_xyt_t> targets_;
     std::vector<pose_xyt_t> newTargets_;
-    //std::vector<pose_xyt_t> newTargets_; 
-
+    
     State state_;
-
+    int64_t last_spin;
     int64_t time_offset;
     bool timesync_initialized_;
 
@@ -357,8 +338,7 @@ private:
  
     TurnManeuverController turn_controller;
     StraightManeuverController straight_controller;
-
-    int64_t spin_start_time;
+    int pointCounter = 0;
 
     int64_t now()
     {
@@ -368,6 +348,12 @@ private:
     bool assignNextTarget(void)
     {
         if(!targets_.empty()) { targets_.pop_back(); }
+        if(!reverse){pointCounter++;}
+        std::cout << "num points: " << pointCounter << "\n";
+        if (pointCounter > 4){
+            pointCounter = 0;
+            spinAround();
+        }
         state_ = TURN; 
         return !targets_.empty();
     }
@@ -429,7 +415,7 @@ int main(int argc, char** argv)
 
                 // Limit command values
                 // Fwd vel
-                float max_fwd_vel = 0.3;
+                float max_fwd_vel = 0.2;
                 if (cmd.trans_v > max_fwd_vel) cmd.trans_v = max_fwd_vel;
                 else if (cmd.trans_v < -max_fwd_vel) cmd.trans_v = -max_fwd_vel;
 
