@@ -6,6 +6,7 @@
 #include <lcmtypes/pose_xyt_t.hpp>
 #include <lcmtypes/thermal_grid_t.hpp>
 #include <lcmtypes/thermal_depth_t.hpp>
+#include <lcmtypes/life_t.hpp>
 #include <slam/particle_filter.hpp>
 #include <slam/mapping.hpp>
 #include <common/pose_trace.hpp>

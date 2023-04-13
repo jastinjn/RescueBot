@@ -6,6 +6,7 @@
 #include <lcmtypes/robot_path_t.hpp>
 #include <lcmtypes/timestamp_t.hpp>
 #include <lcmtypes/message_received_t.hpp>
+#include <lcmtypes/life_t.hpp>
 #include <common/angle_functions.hpp>
 #include <common/pose_trace.hpp>
 #include <common/lcm_config.h>
@@ -16,12 +17,12 @@
 #include <cassert>
 #include <signal.h>
 #include <unistd.h>
-#include <common/time_util.h>
 #include "maneuver_controller.h"
+#include <mutex>
 
-
-bool reverse = 0;
-
+bool reverse = false;
+bool newReverse;
+std::mutex lifeLock_;  
 
 class StraightManeuverController : public ManeuverControllerBase
 {
@@ -36,8 +37,10 @@ private:
     *  - Week 4: Secion 3.2
     *      - Tune PID parameters for forward and turning during DRIVE state
     *************************************************************/
-    float fwd_pid[3] = {0.75, 0.0, 0.0};
+    float fwd_pid[3] = {0.6, 0.0, 0.0};
     float turn_pid[3] = {0.8, 0.0, 0.0};
+    // float fwd_pid[3] = {0.6, 0, 0};
+    // float turn_pid[3] = {1.3, 0.005, 0.};
     /*************************************************************
     * End of TODO
     *************************************************************/
@@ -92,6 +95,7 @@ private:
     *      - Tune PID parameters for turning during TURN state
     *************************************************************/
     float turn_pid[3] = {0.8, 0.0, 0.0};
+    // float turn_pid[3] = {0.3, 0.0001, 0};
     /*************************************************************
     * End of TODO
     *************************************************************/
@@ -227,17 +231,19 @@ public:
                 if(turn_controller.target_reached_final_turn(pose, target))
                 {
                     printf("final turn complete\n");
+                    
                     if (!newTargets_.empty()){
                         targets_ = newTargets_;
                         newTargets_.clear();
+                        reverse = newReverse;
                     }
-                    
+
 		            if(!assignNextTarget())
                     {
                         printf("Target reached! (%f,%f,%f)\n", target.x, target.y, target.theta);
-                        targets_ = newTargets_;
-                        newTargets_.clear();
-                        assignNextTarget();
+                        // targets_ = newTargets_;
+                        // newTargets_.clear();
+                        // assignNextTarget();
                     }
                 } 
                 else
@@ -248,6 +254,33 @@ public:
                     printf("final turn\n");
 
                 }
+            }
+            else if(state_ == SLEEP)
+            {
+                std::cout << "sleeping\n";
+                // if(currentLife_.life_detected == 1 && currentLife_.distance < 0.5){
+                //     state_ = TURN;
+                // }
+                // else {
+                cmd = {0, 0, M_PI/6};
+                if (reverse && currentLife_.life_detected == 1 && currentLife_.distance < 0.5){
+                    std::cout << "spin complete\n";
+                    cmd = {0, 0, 0};
+                    lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+                    state_ = TURN; 
+                }
+                // }
+            }
+            else if (state_ == SPIN){
+                std::cout << "spinning\n";
+                cmd = {0, 0, M_PI/6};
+                if ((now() - last_spin)/1000000 >= 12 || (reverse && currentLife_.life_detected == 1)){
+                    std::cout << "spin complete\n";
+                    cmd = {0, 0, 0};
+                    lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+                    state_ = TURN; 
+                }
+
             }
             else
             {
@@ -269,7 +302,7 @@ public:
     void handlePath(const lcm::ReceiveBuffer* buf, const std::string& channel, const robot_path_t* path)
     {
         newTargets_ = path->path;
-        reverse = path->rescue;
+        // reverse = path->rescue;
         //targets_ = path->path;
         if(reverse)
             std::cout << "driving in reverse" << std::endl;
@@ -283,7 +316,10 @@ public:
 
         std::reverse(newTargets_.begin(), newTargets_.end()); // store first at back to allow for easy pop_back()  
         
+        newReverse = path->rescue;
+
         if (targets_.empty()){
+            reverse = newReverse;
             targets_ = newTargets_;
             newTargets_.clear();
             assignNextTarget();
@@ -305,13 +341,31 @@ public:
         computeOdometryOffset(*pose);
     }
 
-    void spinAround(){
+    void handleLifeDetection(const lcm::ReceiveBuffer* buf, const std::string& channel, const life_t* message){
+        std::lock_guard<std::mutex> autoLock(lifeLock_);
+        life_t prevLife = currentLife_;
+        currentLife_.life_detected = static_cast<int8_t>(message->life_detected);
+        currentLife_.distance = static_cast<float>(message->distance);
+        
+        std::cout << "Life detected at: " << currentLife_.life_detected << std::endl;
+        if (currentLife_.life_detected == 1 && !prevLife.life_detected){
+            targets_.clear();
+        }
+    }
+
+    mbot_motor_command_t spinAround(){
         mbot_motor_command_t cmd {0, 0, M_PI/6};
-        lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
-        sleep(12);
-        std::cout << "spin complete\n";
-        cmd = {0, 0, 0};
-        lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+        return cmd;
+        //lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
+        //sleep(12);
+
+        // for (int i = 0; i < 12; ++i){
+        //     if (currentLife_.life_detected == 1) break;
+        //     sleep(1);
+        // }
+        // std::cout << "spin complete\n";
+        // cmd = {0, 0, 0};
+        // lcmInstance->publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
     }
 
 private:
@@ -322,6 +376,7 @@ private:
         FINAL_TURN, // to get to the pose heading
         DRIVE,
         SPIN,
+        SLEEP,
     };
     
     pose_xyt_t odomToGlobalFrame_;      // transform to convert odometry into the global/map coordinates for navigating in a map
@@ -340,20 +395,38 @@ private:
     StraightManeuverController straight_controller;
     int pointCounter = 0;
 
+    life_t currentLife_;
+
     int64_t now()
     {
 	    return utime_now() + time_offset;
     }
     
     bool assignNextTarget(void)
-    {
+    {   
         if(!targets_.empty()) { targets_.pop_back(); }
-        if(!reverse){pointCounter++;}
-        std::cout << "num points: " << pointCounter << "\n";
-        if (pointCounter > 4){
-            pointCounter = 0;
-            spinAround();
+
+        pointCounter++;
+        if(!reverse){ 
+            std::cout << "num points: " << pointCounter << "\n";
+            if (pointCounter > 4){
+                pointCounter = 0;
+                // spinAround();
+                state_ = SPIN;
+                last_spin = now();
+                return !targets_.empty();
+            }
+            
         }
+        else{
+            if (pointCounter > 1){
+                pointCounter = 0;
+                state_ = SLEEP;
+                return !targets_.empty();
+            }
+            
+        }
+        
         state_ = TURN; 
         return !targets_.empty();
     }
@@ -391,6 +464,7 @@ private:
         lcmInstance->subscribe(SLAM_POSE_CHANNEL, &MotionController::handlePose, this);
         lcmInstance->subscribe(CONTROLLER_PATH_CHANNEL, &MotionController::handlePath, this);
         lcmInstance->subscribe(MBOT_TIMESYNC_CHANNEL, &MotionController::handleTimesync, this);
+        lcmInstance->subscribe(DETECT_LIFE, &MotionController::handleLifeDetection, this);
     }
 };
 

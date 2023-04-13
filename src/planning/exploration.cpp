@@ -21,7 +21,8 @@ bool operator==(const pose_xyt_t& lhs, const pose_xyt_t& rhs)
 
 
 Exploration::Exploration(int32_t teamNumber,
-                         lcm::LCM* lcmInstance)
+                         lcm::LCM* lcmInstance,
+                         bool search)
 : teamNumber_(teamNumber)
 , state_(exploration_status_t::STATE_INITIALIZING)
 , haveNewPose_(false)
@@ -29,12 +30,14 @@ Exploration::Exploration(int32_t teamNumber,
 , haveHomePose_(false)
 , lcmInstance_(lcmInstance)
 , pathReceived_(false)
+, searchForLife_(search)
 {
     assert(lcmInstance_);   // confirm a nullptr wasn't passed in
     
     lcmInstance_->subscribe(SLAM_MAP_CHANNEL, &Exploration::handleMap, this);
     lcmInstance_->subscribe(SLAM_POSE_CHANNEL, &Exploration::handlePose, this);
     lcmInstance_->subscribe(MESSAGE_CONFIRMATION_CHANNEL, &Exploration::handleConfirmation, this);
+    lcmInstance_->subscribe(DETECT_LIFE, &Exploration::handleLifeDetection, this);
     
     // Send an initial message indicating that the exploration module is initializing. Once the first map and pose are
     // received, then it will change to the exploring map state.
@@ -48,7 +51,7 @@ Exploration::Exploration(int32_t teamNumber,
     
     MotionPlannerParams params;
     //params.robotRadius = 0.1;
-    planner_.setParams(params);
+    planner_.setParams(params );
 }
 
 
@@ -71,6 +74,7 @@ bool Exploration::exploreEnvironment()
     
     // If the state is completed, then we didn't fail
     return state_ == exploration_status_t::STATE_COMPLETED_EXPLORATION;
+    // return true;
 }
 
 void Exploration::handleMap(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const occupancy_grid_t* map)
@@ -94,6 +98,11 @@ void Exploration::handleConfirmation(const lcm::ReceiveBuffer* rbuf, const std::
 {
     std::lock_guard<std::mutex> autoLock(dataLock_);
     if(confirm->channel == CONTROLLER_PATH_CHANNEL && confirm->creation_time == most_recent_path_time) pathReceived_ = true;
+}
+
+void Exploration::handleLifeDetection(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const life_t* message){
+    std::lock_guard<std::mutex> autoLock(dataLock_);
+    currentLife_ = *message;
 }
 
 bool Exploration::isReadyToUpdate(void)
@@ -272,6 +281,10 @@ int8_t Exploration::executeExploringMap(bool initialize)
     {
         status.status = exploration_status_t::STATUS_COMPLETE;
     }
+    else if (searchForLife_ && currentLife_.life_detected == 1){
+        std::cout << "target found\n";
+        status.status = exploration_status_t::STATUS_COMPLETE;
+    }
     // Else if there's a path to follow, then we're still in the process of exploring
     else if(currentPath_.path.size() > 1)
     {
@@ -321,7 +334,7 @@ int8_t Exploration::executeReturningHome(bool initialize)
     */
     planner_.setMap(currentMap_);
     currentPath_ = planner_.planPath(currentPose_,homePose_);
-    currentPath_.rescue = 1;        //sets path to rescue path
+    currentPath_.rescue = searchForLife_ ? 1 : 0;        //sets path to rescue path
     std::cout<< "return home start\n";
     
     // pose_xyt_t last_pose = currentPath_.path.back();
@@ -361,7 +374,7 @@ int8_t Exploration::executeReturningHome(bool initialize)
     {
         //status.status = exploration_status_t::STATUS_FAILED;
         status.status = exploration_status_t::STATE_RETURNING_HOME;
-        std::cout << "home failed\n";
+        // std::cout << "home failed\n";
     }
     
     lcmInstance_->publish(EXPLORATION_STATUS_CHANNEL, &status);

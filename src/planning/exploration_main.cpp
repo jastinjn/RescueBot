@@ -12,6 +12,7 @@ int main(int argc, char** argv)
     getopt_t *gopt = getopt_create();
     getopt_add_bool(gopt, 'h', "help", 0, "Show this help");
     getopt_add_int(gopt, 'n', kTeamNumArg, "-1", "Team number of the robot doing the exploration.");
+    getopt_add_bool(gopt, 's', "search", 0, "Search for life");
 
     // If help was requested or the command line is invalid, display the help message and exit
     if (!getopt_parse(gopt, argc, argv, 1) || getopt_get_bool(gopt, "help")) {
@@ -19,6 +20,9 @@ int main(int argc, char** argv)
         getopt_do_usage(gopt);
         return 1;
     }
+
+    bool searchMode = getopt_get_bool(gopt, "search");
+    if (searchMode) std::cout << "searching for life...\n";
 
     // Convert all command-line values into program variables
     int teamNumber = getopt_get_int(gopt, kTeamNumArg);
@@ -28,7 +32,7 @@ int main(int argc, char** argv)
 
     if(!lcmInstance.good()) return 1;
 
-    Exploration exploration(teamNumber, &lcmInstance);
+    Exploration exploration(teamNumber, &lcmInstance, searchMode);
 
     std::atomic<bool> explorationComplete;
 

@@ -35,13 +35,12 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
     previousPose_ = pose;
 }
 
-void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_xyt_t &pose, ThermalGrid &map)
+float Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_xyt_t &pose, ThermalGrid &map, OccupancyGrid &occ_map)
 {
     float c = std::cos(pose.theta);
     float s = std::sin(pose.theta);
     Point<double> globalPose = Point<double>(pose.x,pose.y);
     Point<int> cellPose = global_position_to_grid_cell(globalPose, map);
-    bool life_detected;
     float nearest_source = std::numeric_limits<float>::max();
 
     for (int i = 256; i < 768; ++i){
@@ -52,14 +51,15 @@ void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_
 
         // if (cell_temp < threshold_temp || dist_x_meters < 0.2 || dist_x_meters > 3.0){
         //     continue;
-        // }  
-
-        if (temp_raw > 30.0) life_detected = true;
-        if (dist_x_meters < nearest_source) nearest_source = dist_x_meters;
+        // }
 
         if (dist_x_meters < 0.3|| dist_x_meters > 2.0){
              continue;
         }  
+
+        if (temp_raw > 30.0 && dist_x_meters < nearest_source){ 
+            nearest_source = dist_x_meters;
+        } 
 
         thermalCell.x = static_cast<int8_t>((c*dist_x_meters - s*dist_y_meters) * map.cellsPerMeter() + cellPose.x);
         thermalCell.y = static_cast<int8_t>((s*dist_x_meters + c*dist_y_meters) * map.cellsPerMeter() + cellPose.y);
@@ -72,6 +72,7 @@ void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_
         //     std::cout << "added thermal point \n";
         // }
         if (map.isCellInGrid(thermalCell.x, thermalCell.y)){
+            //update thermal map
             float prevVal = map.thermalValue(thermalCell.x, thermalCell.y);
             if (temp_raw > prevVal){
                 map.setThermalValue(thermalCell.x, thermalCell.y, prevVal + 5.0);
@@ -79,47 +80,17 @@ void Mapping::updateThermalMap(const thermal_depth_t &thermal_depth, const pose_
             else{
                 map.setThermalValue(thermalCell.x, thermalCell.y, prevVal - 0.3);
             }
-            //map.setThermalValue(thermalCell.x, thermalCell.y,std::max(prevVal, temp_raw));
+
+            //update occupancy map
+            if(occ_map.isCellInGrid(thermalCell.x, thermalCell.y) && temp_raw >= 45){
+                for(int i = 0; i < 3; ++i){
+                    increaseCellOdds(thermalCell.x,thermalCell.y,occ_map);
+                }
+            }
+            map.setThermalValue(thermalCell.x, thermalCell.y,std::max(prevVal, temp_raw));
         }
     }
-
-    // if(!initialized_)
-    // {
-    //     previousPose_ = pose;
-    // }
-
-    // pose_xyt_t interpolatedPose = interpolate_pose_by_time(thermal_depth.utime, previousPose_, pose);
-    
-    // float c = std::cos(interpolatedPose.theta);
-    // float s = std::sin(interpolatedPose.theta);
-    // Point<double> globalPose = Point<double>(interpolatedPose.x,interpolatedPose.y);
-    // Point<int> cellPose = global_position_to_grid_cell(globalPose, map);
-
-    // for (int i = 0; i < 768; ++i){
-
-    //     float temp_raw = thermal_depth.temperature[i];
-    //     int8_t cell_temp = (temp_raw > 127.0) ? 127 : static_cast<int8_t>(temp_raw);
-    //     float dist_x_meters = thermal_depth.distance_x[i]/1000.0;
-    //     float dist_y_meters = thermal_depth.distance_y[i]/1000.0;
-
-    //     if (cell_temp < threshold_temp || dist_x_meters < 0.2 || dist_x_meters > 3.0){
-    //         continue;
-    //     }  
-
-    //     thermalCell.x = static_cast<int8_t>((c*dist_x_meters - s*dist_y_meters) * map.cellsPerMeter() + cellPose.x);
-    //     thermalCell.y = static_cast<int8_t>((s*dist_x_meters + c*dist_y_meters) * map.cellsPerMeter() + cellPose.y);
-
-    //     std::cout << "thermal raw: " << thermal_depth.distance_x[i] << " " << thermal_depth.distance_y[i] << " " << thermal_depth.temperature[i] << "\n";
-    //     std::cout << "thermal point: " << thermalCell.x << " " << thermalCell.y << " " << static_cast<int>(cell_temp) << "\n";
-
-    //     if (map.isCellInGrid(thermalCell.x, thermalCell.y) && map.thermalValue(thermalCell.x, thermalCell.y) < cell_temp){
-    //         map.setThermalValue(thermalCell.x, thermalCell.y, cell_temp);
-    //         std::cout << "added thermal point \n";
-    //     }
-    // }
-
-    // initialized_ = true;
-    // previousPose_ = pose;
+    return nearest_source;
 }
 
 void Mapping::scoreEndpoint(const adjusted_ray_t &ray, OccupancyGrid &map){

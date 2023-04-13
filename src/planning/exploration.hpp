@@ -7,6 +7,7 @@
 #include <slam/occupancy_grid.hpp>
 #include <lcmtypes/exploration_status_t.hpp>
 #include <lcmtypes/pose_xyt_t.hpp>
+#include <lcmtypes/life_t.hpp>
 #include <lcmtypes/robot_path_t.hpp>
 #include <lcmtypes/message_received_t.hpp>
 #include <lcm/lcm-cpp.hpp>
@@ -55,7 +56,7 @@ public:
     * \param    targetFile              Name of the file holding the key and treasure target information (only matters if shouldAttemptEscape is true)
     * \param    lcmInstance             Instance of LCM to use for communication
     */
-    Exploration(int32_t teamNumber, lcm::LCM* lcmInstance);
+    Exploration(int32_t teamNumber, lcm::LCM* lcmInstance, bool search);
     
     /**
     * exploreEnvironment explores the robot's environment. The exploration routine assumes that the environment
@@ -70,6 +71,7 @@ public:
     // Data handlers for LCM messages
     void handleMap(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const occupancy_grid_t* map);
     void handlePose(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const pose_xyt_t* pose);
+    void handleLifeDetection(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const life_t* message);
     void handleConfirmation(const lcm::ReceiveBuffer* rbuf, const std::string& channel, const message_received_t* confirm);
 
 private:
@@ -106,7 +108,10 @@ private:
     
     size_t prev_frontier_size;
     bool pathReceived_;
+    bool searchForLife_;
     int64_t most_recent_path_time;
+
+    life_t currentLife_;
 //    int8_t path_redundancy_count;
 
     /////////////////////////// End student code ///////////////////////////////
@@ -122,6 +127,7 @@ private:
     int8_t executeReturningHome(bool initialize);
     int8_t executeCompleted(bool initialize);
     int8_t executeFailed(bool initialize);
+
     
     /////////// TODO: Add any additional methods you might need here //////////////
     

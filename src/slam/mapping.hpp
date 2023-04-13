@@ -36,7 +36,7 @@ public:
     */
     void updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGrid& map);
 
-    void updateThermalMap(const thermal_depth_t &thermal_depth, const pose_xyt_t &pose, ThermalGrid &map);
+    float updateThermalMap(const thermal_depth_t &thermal_depth, const pose_xyt_t &pose, ThermalGrid &map, OccupancyGrid &occ_map);
 
 private:
     

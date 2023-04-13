@@ -287,11 +287,6 @@ void OccupancyGridSLAM::updateMap(void)
     {
         // Process the map
         mapper_.updateMap(currentScan_, currentPose_, map_);
-        // std::cout << "Therm data temp 0: " << thermal_data_.temperature[0] << std::endl;
-        // std::cout << "Therm data x 0: " << thermal_data_.distance_x[0] << std::endl;
-        // std::cout << "Therm data y 0: " << thermal_data_.distance_y[0] << std::endl;
-        // thermalMap_.update(currentPose_, thermal_data_);
-
         haveMap_ = true;
     }
 
@@ -302,18 +297,25 @@ void OccupancyGridSLAM::updateMap(void)
     // // Update thermal map 
     // bool moved = (deltaX!=0) || (deltaY!=0) || (deltaTheta!=0);
     // if (hasNewThermalData_ && !moved){
-    //     mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_);
+    //     mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_, map_);
     //     hasNewThermalData_ = false;
     // }
     
     if (hasNewThermalData_){
-        mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_);
+        float nearest_source = mapper_.updateThermalMap(thermal_data_, currentPose_, thermalMap_, map_);
+        life_t life;
+        life.life_detected = 0;
+        //life.utime = utime_now();
+        if (nearest_source < std::numeric_limits<float>::max()){
+            life.life_detected = 1;
+            life.distance = nearest_source;
+        }
+        std::cout << "life detected: " << life.life_detected << std::endl;
+        std:: cout << "life distance: " << life.distance << std::endl;
+        lcm_.publish(DETECT_LIFE, &life);
         hasNewThermalData_ = false;
     }
-
-
         
-
     // Publish the map even in localization-only mode to ensure the visualization is meaningful
     // Send every 5th map -- about 1Hz update rate for map output -- can change if want more or less during operation
     if(mapUpdateCount_ % 5 == 0)

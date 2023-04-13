@@ -62,27 +62,55 @@ robot_path_t search_for_path(pose_xyt_t start,
 }
 
 
-//hcost just adding distance
-double h_cost(Node* from, Node* goal, const ObstacleDistanceGrid& distances){
-    //Demo: diagonal distance
-    int dx = std::abs(goal->cell.x-from->cell.x);
+// //hcost just adding distance
+// double h_cost(Node* from, Node* goal, const ObstacleDistanceGrid& distances){
+//     //Demo: diagonal distance
+//     int dx = std::abs(goal->cell.x-from->cell.x);
+//     int dy = std::abs(goal->cell.y - from->cell.y);
+//     double diag_distance = 1.414;
+
+//     double h_cost = (dx+dy) + (diag_distance-2) * std::min(dx,dy);
+//     return h_cost;
+// }
+
+// //TODO: implement g_cost
+// double g_cost(Node* from, Node* goal, const ObstacleDistanceGrid& distances, const SearchParams& params){
+//     double diag_distance = 1.414;
+//     int dx = std::abs(from->parent->cell.x-from->cell.x);
+//     int dy = std::abs(from->parent->cell.y - from->cell.y);
+//     double g_cost = from->parent->g_cost + (dx+dy==2)?diag_distance:1;
+//     double from_obs_dist = distances(from->cell.x,from->cell.y);
+//     if(from_obs_dist > params.minDistanceToObstacle && from_obs_dist < params.maxDistanceWithCost){
+//         g_cost += pow(params.maxDistanceWithCost - from_obs_dist, params.distanceCostExponent);
+//     }
+//     return g_cost;
+// }
+
+double h_cost(Node *from, Node *goal, const ObstacleDistanceGrid &distances)
+{
+    // 8-way - Diagonal Distance
+    int dx = std::abs(goal->cell.x - from->cell.x);
     int dy = std::abs(goal->cell.y - from->cell.y);
     double diag_distance = 1.414;
-
-    double h_cost = (dx+dy) + (diag_distance-2) * std::min(dx,dy);
+    double h_cost = (dx + dy) + (diag_distance - 2) * std::min(dx, dy);
     return h_cost;
 }
 
-//TODO: implement g_cost
-double g_cost(Node* from, Node* goal, const ObstacleDistanceGrid& distances, const SearchParams& params){
-    double diag_distance = 1.414;
-    int dx = std::abs(from->parent->cell.x-from->cell.x);
-    int dy = std::abs(from->parent->cell.y - from->cell.y);
-    double g_cost = from->parent->g_cost + (dx+dy==2)?diag_distance:1;
-    double from_obs_dist = distances(from->cell.x,from->cell.y);
-    if(from_obs_dist > params.minDistanceToObstacle && from_obs_dist < params.maxDistanceWithCost){
-        g_cost += pow(params.maxDistanceWithCost - from_obs_dist, params.distanceCostExponent);
+double g_cost(Node *from, Node *goal, const ObstacleDistanceGrid &distances, const SearchParams &params)
+{
+    double g_cost = from->g_cost + 1.0;
+
+    double cellDistance = distances(goal->cell.x, goal->cell.y);
+
+    double distanceCost = 0.0;
+
+    if (cellDistance > params.minDistanceToObstacle && cellDistance < params.maxDistanceWithCost)
+    {
+        distanceCost = pow(params.maxDistanceWithCost - cellDistance, params.distanceCostExponent);
     }
+
+    g_cost += distanceCost;
+
     return g_cost;
 }
 
