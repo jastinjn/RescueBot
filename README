@@ -1,37 +1,3 @@
-=== Directories ===
+This codebase contains the program files for RescueBot, our team's Design Project for the class EECS 467: Autonomous Robotics taken at the University of Michigan in Winter of 2023. Most of the code is based on Botlab, the first major component of the course, which includes implementation for motion control, SLAM, path planning and the LCM messaging framework and is owned by the EECS 467 Instructional Team.
 
-= bin/
-    - where all built binaries are located
-    - you'll be using this directory a lot
-    
-= data/
-    - where data needed to run parts of the assignment are located
-    - log files and target files for SLAM and exploration are here
-    
-= lcmtypes/
-    - where the .lcm type definitions are located
-    - the generated types are stored in src/lcmtypes
-    
-= lib/
-    - where static libraries are saved during the build process
-    - you should never need to manually do anything in this directory
-    
-= src/
-    - where all source code for botlab is located
-    - the subdirectories will have a further description of their contents
-    
-
-=== Files ===
-
-= Makefile
-    - the root Makefile that launches the recursive build of the botlab code
-    - you shouldn't need to edit this file
-    
-= log_mbot_sensors.sh
-    - a script to log the sensor data needed for SLAM so you can easily create your own log files 
-      for testing
-
-= setenv.sh
-    - a script for setting environment variables needed for running Vx applications
-    - run this script before running botgui in a terminal on your laptop
-    - run via `. setenv.sh` -- note the space
+Our additions to the codebase include the python script "realsense.thermal.py", which recieves data from the Intel Realsense 435i stereo camera and the MLX90640 IR thermal camera. We use the Intel Realsense SDK, Adafruit drivers and OpenCV to extract and process this data, which is published as an LCM message. Our group has made major modifications to the mapping, exploration, motion controller and GUI programs as well to support the new thermal mapping and rescue features. 
